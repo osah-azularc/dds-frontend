@@ -1,0 +1,134 @@
+html {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background-color: #ffffff;
+  height: 100%;
+}
+
+*:focus-visible {
+  outline: 2px solid #d7a312;
+}
+.MuiButton-containedPrimary:focus-visible {
+  outline: 2px solid #0c2631;
+}
+/* HTML: <div class="loader"></div> */
+.Dotloader {
+  width: 35px;
+  aspect-ratio: 5;
+  --_g: no-repeat radial-gradient(circle closest-side, #000 90%, #0000);
+  background:
+    var(--_g) 0% 50%,
+    var(--_g) 50% 50%,
+    var(--_g) 100% 50%;
+  background-size: calc(100%/3) 100%;
+  animation: l7 1s infinite linear;
+}
+.DotloaderWarning {
+  --_g: no-repeat radial-gradient(circle closest-side, #663C00 90%, #0000);
+}
+@keyframes l7 {
+  33% {
+    background-size: calc(100%/3) 0%, calc(100%/3) 100%, calc(100%/3) 100%
+  }
+  50% {
+    background-size: calc(100%/3) 100%, calc(100%/3) 0%, calc(100%/3) 100%
+  }
+  66% {
+    background-size: calc(100%/3) 100%, calc(100%/3) 100%, calc(100%/3) 0%
+  }
+}
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  border-radius: 10px !important;
+  background-color: rgba(255, 255, 255, 1);
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgba(176, 190, 197, 1);
+  border-radius: 10px !important;
+}
+
+.hide {
+  -webkit-animation: fadeinout 0.3s linear forwards;
+  animation: fadeinout 0.3s linear forwards;
+}
+.rootBox {
+  height: 100%;
+}
+textarea {
+  border: 1px solid rgba(0, 0, 0, 0.23);
+  border-radius: 4px;
+  width: calc(100% - 32px);
+  resize: none;
+  padding: 15px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.6);
+  font-family:
+    Open Sans,
+    sans-serif;
+}
+@-webkit-keyframes fadeinout {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeinout {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.show {
+  -webkit-animation: display 0.8s linear forwards;
+  animation: display 0.8s linear forwards;
+  height: 100%;
+}
+.FullHeight {
+  height: 100%;
+  position: relative;
+  min-height: calc(-96px + 100vh);
+}
+
+@-webkit-keyframes display {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes display {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
