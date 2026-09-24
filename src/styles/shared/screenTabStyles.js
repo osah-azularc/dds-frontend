@@ -17,6 +17,12 @@ const screenTabStyles = (theme) => ({
       color: '#fff',
       textAlign: 'center',
       fontSize: '15px',
+      height: '100%',
+      margin: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxSizing: 'border-box',
       [theme.breakpoints.down('sm')]: {
         fontSize: '14px !important',
         padding: '12px 6px',
@@ -31,6 +37,13 @@ const screenTabStyles = (theme) => ({
     },
     '& .MuiTabs-root': {
       width: '100%',
+      height: '100%',
+    },
+    '& .MuiTabs-scroller': {
+      height: '100%',
+    },
+    '& .MuiTabs-flexContainer': {
+      height: '100%',
     },
     '& .MuiTabs-indicator': {
       height: '6px',

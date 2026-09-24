@@ -1,10 +1,9 @@
 /* eslint-disable */
-import { AccountCircle, LogoutOutlined } from '@mui/icons-material';
+import { LogoutOutlined } from '@mui/icons-material';
 import { Avatar, Box, IconButton, List, ListItem, ListItemButton, Popover } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { account } from '../../_mock/account';
 import useAuth from '../../hooks/useAuth';
 import { setLoggingOut } from '../../utilities/axiosConfig';
@@ -35,7 +34,6 @@ export default function AccountPopover() {
   const [open, setOpen] = useState(null);
   const { logout } = useAuth();
   const user = useSelector((state) => state.user);
-  const navigate = useNavigate();
 
   const userName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : '';
   const userInitials = userName
@@ -80,23 +78,6 @@ export default function AccountPopover() {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <List component="nav" aria-label="" className="CommonToolbarList">
-          <ListItem>
-            <ListItemButton
-              aria-label="My-Account"
-              role="button"
-              onClick={() => {
-                navigate('/my-account');
-                handleClose();
-              }}
-            >
-              <Box className="FlexCenter">
-                <Box className="FlexCenter" mr={1}>
-                  <AccountCircle color="action" />
-                </Box>
-                My Account
-              </Box>
-            </ListItemButton>
-          </ListItem>
           <ListItem className="NoBorder">
             <ListItemButton aria-label="Logout" role="button" onClick={handleLogout}>
               <Box className="FlexCenter">

@@ -23,9 +23,11 @@ const AppLayout = ({ children }) => {
   const location = useLocation(); // Get current location
   const isHome = location.pathname === '/home'; // Check if it's the home page
   const isSearchResults = location.pathname.startsWith('/search-results'); // Check if it's the search results page
+  // /form1/:docketId (the detail view) - but not /form1 itself (the "new" form).
+  const isFormDetail = /^\/form1\/.+/.test(location.pathname);
 
   // Pages with DocketSearch component don't need extra padding
-  const hasDocketSearch = isHome || isSearchResults;
+  const hasDocketSearch = isHome || isSearchResults || isFormDetail;
 
   // Exact header heights based on logo (253×80 px) + measured padding:
   //   ≥1321px (desktop)  : nav links row, no outer padding      → ~92 px
