@@ -14,7 +14,11 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import SingleSelectFilter from '../../../../components/common/SingleSelectFilter';
-import { AGENCY_CODE, CASE_TYPE, HEARING_TYPE, ELIGIBLE_PERMIT_OPTIONS } from '../constants';
+import { AGENCY_CODE, CASE_TYPE, HEARING_TYPE } from '../constants';
+import HearingInformationSection from './HearingInformationSection';
+import TemporaryPermitSection from './TemporaryPermitSection';
+
+const displayDate = (value) => (value ? value.format('MM-DD-YYYY') : '');
 
 // AdapterDayjs's isValid()/isAfter() etc. expect a dayjs instance, not a
 // native Date -- passing a plain `new Date()` as maxDate throws
@@ -28,11 +32,14 @@ const FIELD_SX = { '& .MuiOutlinedInput-root': { backgroundColor: '#fff' } };
 const datePickerSlotProps = { textField: { fullWidth: true, size: 'small', sx: FIELD_SX } };
 
 /**
- * "OSAH Form 1 Information" panel — the left column of the "Enter New
- * Form 1" screen. Field set matches the legacy DDS portal's
- * form1-new.phtml exactly: Agency Code/Case Type are fixed single-option
- * dropdowns, Hearing Type is a disabled placeholder, and the Temporary
- * Permit fields only appear once "Eligible for a Permit?" is Yes.
+ * "Form1 Information" panel — the left column of the "Enter New Form 1"
+ * screen, also reused read-only to review an existing docket. Field set
+ * matches the legacy DDS portal's form1-new.phtml/form1.phtml: Agency
+ * Code/Case Type are fixed single-option dropdowns, and the Temporary
+ * Permit fields only appear once "Eligible for a Permit?" is Yes. When
+ * readOnly, Status/Hearing Information/Date Received/Date Entered are
+ * shown too — those are only ever set once OSAH staff have processed the
+ * docket, so they're blank (and hidden) on the "create new" flow.
  * Section header/typography/field styling mirrors ecourt-frontend's
  * DocketInfoFields.jsx / DocumentFileManagement.jsx conventions.
  */
@@ -45,14 +52,15 @@ const GeneralInformationForm = ({
   onEligiblePermitChange,
   onEffectiveDateChange,
   onSave,
+  readOnly,
+  updatingPermit,
+  onUpdatePermit,
 }) => {
-  const isEligible = form.eligiblePermit === '1';
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 3 }}>
         <Typography variant="h2" color="secondary" sx={{ mb: 2 }}>
-          OSAH Form 1 Information
+          Form1 Information
         </Typography>
 
         <Grid container spacing={3}>
@@ -88,18 +96,60 @@ const GeneralInformationForm = ({
               value={form.county}
               onChange={(value) => onFieldChange({ county: value })}
               loading={countyListLoading}
+              disabled={readOnly}
               sx={FIELD_SX}
             />
           </Grid>
+          {readOnly && (
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Status"
+                fullWidth
+                size="small"
+                value={form.status}
+                disabled
+                sx={FIELD_SX}
+              />
+            </Grid>
+          )}
+        </Grid>
+
+        {readOnly && (
+          <HearingInformationSection
+            hearingSite={form.hearingSite}
+            hearingDate={displayDate(form.hearingDate)}
+            hearingTime={form.hearingTime}
+            judge={form.judge}
+            judgeAssistant={form.judgeAssistant}
+          />
+        )}
+
+        <Typography variant="h2" color="secondary" sx={{ mt: 3, mb: 2 }}>
+          Additional Information
+        </Typography>
+        <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <DatePicker
               label="Date Requested *"
               value={form.dateRequested}
               onChange={(value) => onFieldChange({ dateRequested: value })}
               maxDate={today()}
+              disabled={readOnly}
               slotProps={datePickerSlotProps}
             />
           </Grid>
+          {readOnly && (
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Date Received"
+                fullWidth
+                size="small"
+                value={displayDate(form.dateReceivedByOSAH)}
+                disabled
+                sx={FIELD_SX}
+              />
+            </Grid>
+          )}
 
           <Grid item xs={12} sm={6}>
             <TextField
@@ -109,6 +159,7 @@ const GeneralInformationForm = ({
               size="small"
               value={form.agencyRefNumber}
               onChange={(e) => onFieldChange({ agencyRefNumber: e.target.value })}
+              disabled={readOnly && form.status !== 'Draft'}
               sx={FIELD_SX}
             />
           </Grid>
@@ -117,88 +168,50 @@ const GeneralInformationForm = ({
               label="Hearing Type"
               fullWidth
               size="small"
-              value={HEARING_TYPE}
+              value={readOnly ? form.hearingMode : HEARING_TYPE}
               disabled
               sx={FIELD_SX}
             />
           </Grid>
-        </Grid>
-
-        <Typography variant="h2" color="secondary" sx={{ mt: 3, mb: 2 }}>
-          Temporary Permit
-        </Typography>
-
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              label="Eligible for a Permit?"
-              fullWidth
-              size="small"
-              value={form.eligiblePermit}
-              onChange={(e) => onEligiblePermitChange(e.target.value)}
-              sx={FIELD_SX}
-            >
-              {ELIGIBLE_PERMIT_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-
-          {isEligible && (
-            <>
-              <Grid item xs={12} sm={6}>
-                <DatePicker
-                  label="Permit Effective Date *"
-                  value={form.permitEffectiveDate}
-                  onChange={onEffectiveDateChange}
-                  slotProps={datePickerSlotProps}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <DatePicker
-                  label="Permit Expiration Date *"
-                  value={form.permitExpiryDate}
-                  disabled
-                  slotProps={datePickerSlotProps}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <DatePicker
-                  label="Date of Birth *"
-                  value={form.dob}
-                  onChange={(value) => onFieldChange({ dob: value })}
-                  maxDate={today()}
-                  slotProps={datePickerSlotProps}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <DatePicker
-                  label="Incident Date *"
-                  value={form.incidentDate}
-                  onChange={(value) => onFieldChange({ incidentDate: value })}
-                  maxDate={today()}
-                  slotProps={datePickerSlotProps}
-                />
-              </Grid>
-            </>
+          {readOnly && (
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Date Entered"
+                fullWidth
+                size="small"
+                value={displayDate(form.dateEntered)}
+                disabled
+                sx={FIELD_SX}
+              />
+            </Grid>
           )}
         </Grid>
 
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          <Grid item xs={12} sm={6}>
-            <Button
-              fullWidth
-              onClick={onSave}
-              disabled={saving}
-              startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
+        <TemporaryPermitSection
+          form={form}
+          onFieldChange={onFieldChange}
+          onEligiblePermitChange={onEligiblePermitChange}
+          onEffectiveDateChange={onEffectiveDateChange}
+          today={today}
+          showSaveButton={readOnly}
+          saving={updatingPermit}
+          onSave={onUpdatePermit}
+        />
+
+        {!readOnly && (
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <Button
+                fullWidth
+                onClick={onSave}
+                disabled={saving}
+                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </Box>
     </LocalizationProvider>
   );
@@ -213,6 +226,15 @@ const formPropType = PropTypes.shape({
   permitExpiryDate: PropTypes.object,
   dob: PropTypes.object,
   incidentDate: PropTypes.object,
+  status: PropTypes.string,
+  hearingSite: PropTypes.string,
+  hearingDate: PropTypes.object,
+  hearingTime: PropTypes.string,
+  judge: PropTypes.string,
+  judgeAssistant: PropTypes.string,
+  hearingMode: PropTypes.string,
+  dateReceivedByOSAH: PropTypes.object,
+  dateEntered: PropTypes.object,
 });
 
 GeneralInformationForm.propTypes = {
@@ -224,6 +246,15 @@ GeneralInformationForm.propTypes = {
   onEligiblePermitChange: PropTypes.func.isRequired,
   onEffectiveDateChange: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool,
+  updatingPermit: PropTypes.bool,
+  onUpdatePermit: PropTypes.func,
+};
+
+GeneralInformationForm.defaultProps = {
+  readOnly: false,
+  updatingPermit: false,
+  onUpdatePermit: undefined,
 };
 
 export default React.memo(GeneralInformationForm);

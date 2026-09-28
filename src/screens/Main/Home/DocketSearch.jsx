@@ -27,6 +27,7 @@ const DocketSearch = () => {
     }
 
     navigate(`/docket/${docketNo}`);
+    setShowSearchOptions(false);
   }, [docketNo, navigate]);
 
   const handleKeyDown = (e) => {
@@ -70,7 +71,10 @@ const DocketSearch = () => {
           </Box>
         </Box>
       </Box>
-      <AdditionalSearchOptions showSearchOptions={showSearchOptions} />
+      <AdditionalSearchOptions
+        showSearchOptions={showSearchOptions}
+        onSearch={() => setShowSearchOptions(false)}
+      />
     </>
   );
 };

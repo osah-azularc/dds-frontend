@@ -6,8 +6,12 @@ import PropTypes from 'prop-types';
 const Main = lazy(() => import('../screens/Main/Main'));
 const Home = lazy(() => import('../screens/Main/Home/Home'));
 const Form1 = lazy(() => import('../screens/Main/Form1/Form1'));
+const Form1Notes = lazy(() => import('../screens/Main/Form1/Form1Notes'));
+const Form1History = lazy(() => import('../screens/Main/Form1/Form1History'));
+const Form1205Form = lazy(() => import('../screens/Main/Form1/Form1205Form'));
 const TemporaryPermits = lazy(() => import('../screens/Main/TemporaryPermits/TemporaryPermits'));
 const RejectedForm1s = lazy(() => import('../screens/Main/RejectedForm1s/RejectedForm1s'));
+const SearchResultsPage = lazy(() => import('../screens/Main/Home/SearchResultsPage'));
 
 const PrivateRoutes = ({ as: Component, ...props }) => {
   const location = useLocation();
@@ -37,12 +41,32 @@ const appNav = [
     element: <Form1 />,
   },
   {
+    path: '/form1/reqdt/:form1Id',
+    element: <Form1 />,
+  },
+  {
+    path: '/form1/notes/reqdt/:form1Id',
+    element: <Form1Notes />,
+  },
+  {
+    path: '/form1/history/reqdt/:form1Id',
+    element: <Form1History />,
+  },
+  {
+    path: '/form1/1205form/reqdt/:form1Id',
+    element: <Form1205Form />,
+  },
+  {
     path: '/temporary-permits',
     element: <TemporaryPermits />,
   },
   {
     path: '/rejected-form1s',
     element: <RejectedForm1s />,
+  },
+  {
+    path: '/search-results',
+    element: <SearchResultsPage />,
   },
 ];
 

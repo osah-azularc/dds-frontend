@@ -7,6 +7,7 @@ import { Link, useLocation } from 'react-router-dom';
 import MainLogo from '../MainLogo/MainLogo';
 import styles from './HeaderStyle';
 import DocketSearch from '../../screens/Main/Home/DocketSearch';
+import { isDocketDetailRoute } from '../../utilities/docketDetailRoutes';
 
 const AccountPopover = lazy(() => import('../common/account-popover'));
 
@@ -24,6 +25,8 @@ const Header = () => {
   const location = useLocation();
 
   const isHome = location.pathname === '/home';
+  const isSearchResults = location.pathname.startsWith('/search-results');
+  const isFormDetail = isDocketDetailRoute(location.pathname);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -109,7 +112,7 @@ const Header = () => {
         {!isDesktop && menuOpen && renderNavLinks()}
       </AppBar>
 
-      {isHome && <DocketSearch />}
+      {(isHome || isSearchResults || isFormDetail) && <DocketSearch />}
     </Box>
   );
 };

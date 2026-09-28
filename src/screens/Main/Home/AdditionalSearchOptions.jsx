@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { Box, Button, Collapse, Grid, TextField } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -37,8 +38,39 @@ import {
  * lists — see searchConstants.js. The rest of the dropdown data comes from
  * dashboardFiltersSlice, loaded on first expand.
  */
-const AdditionalSearchOptions = ({ showSearchOptions }) => {
+// SingleSelectFilter/SearchMultiSelectFilter store the whole { label, value }
+// option (or an array of them for multi-select), not the raw value.
+const optionValue = (option) => option?.value;
+
+const buildSearchCondition = (form) => {
+  const condition = {};
+
+  if (form.lastName) condition.lastName = form.lastName;
+  if (form.firstName) condition.firstName = form.firstName;
+  if (form.contactType) condition.typeOfContact = optionValue(form.contactType);
+  if (form.agencyRefNumber) condition.agencyRefNumber = form.agencyRefNumber;
+  if (form.county.length > 0) condition.county = form.county.map(optionValue);
+  if (form.status) condition.status = optionValue(form.status);
+  if (form.agency) condition.refAgency = [optionValue(form.agency)];
+  if (form.caseType) condition.caseType = [optionValue(form.caseType)];
+  if (form.judge) condition.judge = optionValue(form.judge);
+  if (form.judgeAssistant) condition.judgeAssistant = optionValue(form.judgeAssistant);
+  if (form.hearingSite) condition.hearingSite = optionValue(form.hearingSite);
+
+  const [hearingDateFrom, hearingDateTo] = form.hearingDateRange;
+  if (hearingDateFrom) condition.hearingDateFrom = hearingDateFrom.format('YYYY-MM-DD');
+  if (hearingDateTo) condition.hearingDateTo = hearingDateTo.format('YYYY-MM-DD');
+
+  const [dateReceivedFrom, dateReceivedTo] = form.dateReceivedRange;
+  if (dateReceivedFrom) condition.dateReceivedByOSAHFrom = dateReceivedFrom.format('YYYY-MM-DD');
+  if (dateReceivedTo) condition.dateReceivedByOSAHTo = dateReceivedTo.format('YYYY-MM-DD');
+
+  return condition;
+};
+
+const AdditionalSearchOptions = ({ showSearchOptions, onSearch }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const judgeList = useSelector(selectJudgeList);
   const judgeAssistantList = useSelector(selectJudgeAssistantList);
   const countyList = useSelector(selectCountyList);
@@ -84,8 +116,11 @@ const AdditionalSearchOptions = ({ showSearchOptions }) => {
       return;
     }
 
-    showWarningSnackbar('Search results view is not available yet.');
-  }, [form]);
+    navigate('/search-results', {
+      state: { filters: buildSearchCondition(form), searchType: 'general' },
+    });
+    onSearch?.();
+  }, [form, navigate, onSearch]);
 
   return (
     <Collapse in={showSearchOptions} onEntered={handleEntered}>
@@ -241,6 +276,11 @@ const AdditionalSearchOptions = ({ showSearchOptions }) => {
 
 AdditionalSearchOptions.propTypes = {
   showSearchOptions: PropTypes.bool.isRequired,
+  onSearch: PropTypes.func,
+};
+
+AdditionalSearchOptions.defaultProps = {
+  onSearch: undefined,
 };
 
 export default React.memo(AdditionalSearchOptions);

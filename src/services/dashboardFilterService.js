@@ -79,14 +79,14 @@ const formatUsersByType = (userType, data = []) =>
     })),
   );
 
-// Counties are returned pre-sorted by the backend (CountyID) so that
-// special entries (No County, Out of State, ...) stay at the end.
 const formatCounties = (data = []) =>
-  data.map((item) => ({
-    label: item.countyDescription,
-    value: item.countyDescription,
-    id: item.countyId,
-  }));
+  sortByLabel(
+    data.map((item) => ({
+      label: item.countyDescription,
+      value: item.countyDescription,
+      id: item.countyId,
+    })),
+  );
 
 // display_name is the label shown to the user; statusList (the raw `status`
 // column) is the value sent back on search, matching dds-header.phtml's

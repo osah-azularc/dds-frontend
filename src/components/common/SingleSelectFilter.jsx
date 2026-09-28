@@ -16,6 +16,7 @@ const SingleSelectFilter = ({
   value = null,
   onChange,
   loading = false,
+  disabled = false,
   sx = undefined,
 }) => (
   <Autocomplete
@@ -27,6 +28,7 @@ const SingleSelectFilter = ({
       }
     }}
     loading={loading}
+    disabled={disabled}
     getOptionLabel={(option) => option?.label || ''}
     isOptionEqualToValue={(opt, val) => opt?.value === val?.value}
     filterOptions={(opts, state) => {
@@ -53,6 +55,7 @@ SingleSelectFilter.propTypes = {
   value: PropTypes.object,
   onChange: PropTypes.func.isRequired,
   loading: PropTypes.bool,
+  disabled: PropTypes.bool,
   sx: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
 };
 
