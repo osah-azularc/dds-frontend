@@ -11,6 +11,7 @@ import { useLocation } from 'react-router-dom'; // Use React Router's useLocatio
 import DrawerNav from '../DrawerNav/DrawerNav';
 import FooterStrip from '../FooterStrip/FooterStrip';
 import style from './AppLayoutStyle';
+import { isDocketDetailRoute } from '../../utilities/docketDetailRoutes';
 
 const AppLayout = ({ children }) => {
   const theme = useTheme();
@@ -23,9 +24,11 @@ const AppLayout = ({ children }) => {
   const location = useLocation(); // Get current location
   const isHome = location.pathname === '/home'; // Check if it's the home page
   const isSearchResults = location.pathname.startsWith('/search-results'); // Check if it's the search results page
+  const isFormDetail = isDocketDetailRoute(location.pathname); // Any of the 4 docket-detail tabs
 
-  // Pages with DocketSearch component don't need extra padding
-  const hasDocketSearch = isHome || isSearchResults;
+  // Pages with DocketSearch component don't need extra padding -- isFormDetail now shares
+  // Header.jsx's own route list (docketDetailRoutes.js) instead of duplicating it.
+  const hasDocketSearch = isHome || isSearchResults || isFormDetail;
 
   // Exact header heights based on logo (253×80 px) + measured padding:
   //   ≥1321px (desktop)  : nav links row, no outer padding      → ~92 px

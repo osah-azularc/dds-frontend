@@ -800,6 +800,12 @@ const appTheme = createTheme({
           '&.Mui-error': {
             borderColor: theme.palette.error.main,
           },
+          // Matches the disabled-field styling ecourt-frontend applies per-component
+          // (disabledFieldSx in CaseTypeFormFields.jsx etc.) -- promoted here so every
+          // MUI text field/select gets it by default instead of copy-pasting it per file.
+          '&.Mui-disabled': {
+            backgroundColor: '#f5f5f5',
+          },
           // Only pad the real label span - the no-label notch renders a
           // <span class="notranslate"> holding a zero-width space, and padding that
           // widens the <legend>, cutting a small gap into the top border of every
@@ -819,6 +825,11 @@ const appTheme = createTheme({
           '&::placeholder': {
             color: 'rgba(0, 0, 0, 0.60)',
             opacity: '1',
+          },
+          // MUI's default disabled opacity (text.disabled) reads as too subtle on
+          // its own; override the fill color directly, same as ecourt-frontend does.
+          '&.Mui-disabled': {
+            WebkitTextFillColor: '#666666',
           },
         },
         inputMultiline: {
