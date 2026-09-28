@@ -1,8 +1,13 @@
+import React from 'react';
+import { Box, IconButton, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, IconButton, Typography } from '@mui/material';
-import PropTypes from 'prop-types';
 
+/**
+ * DataGridPro columns for the Notes tab (Date/Notes-Summary/Updated By +
+ * Edit/Delete actions), matching the legacy DDS portal's form1-notes.phtml
+ * table layout. Ported from ecourt-frontend's own NotesTabColumns.jsx.
+ */
 const NotesTabColumns = ({ onEditNoteOpen, onDeleteNoteOpen }) => [
   { field: 'date', headerName: 'Date', width: 150 },
   {
@@ -16,11 +21,7 @@ const NotesTabColumns = ({ onEditNoteOpen, onDeleteNoteOpen }) => [
       </Box>
     ),
   },
-  {
-    field: 'updatedBy',
-    headerName: 'Updated By',
-    width: 160,
-  },
+  { field: 'updatedBy', headerName: 'Updated By', width: 160 },
   {
     field: 'edit',
     headerName: ' ',
@@ -28,6 +29,7 @@ const NotesTabColumns = ({ onEditNoteOpen, onDeleteNoteOpen }) => [
     width: 44,
     align: 'center',
     headerAlign: 'center',
+    cellClassName: 'icon-action-cell',
     renderCell: ({ row }) => (
       <IconButton onClick={() => onEditNoteOpen(row)} size="small" title="Edit Note">
         <EditIcon fontSize="small" />
@@ -41,6 +43,7 @@ const NotesTabColumns = ({ onEditNoteOpen, onDeleteNoteOpen }) => [
     width: 44,
     align: 'center',
     headerAlign: 'center',
+    cellClassName: 'icon-action-cell',
     renderCell: ({ row }) => (
       <IconButton onClick={() => onDeleteNoteOpen(row)} size="small" title="Delete Note">
         <DeleteIcon fontSize="small" />
@@ -48,10 +51,5 @@ const NotesTabColumns = ({ onEditNoteOpen, onDeleteNoteOpen }) => [
     ),
   },
 ];
-
-NotesTabColumns.propTypes = {
-  onEditNoteOpen: PropTypes.func.isRequired,
-  onDeleteNoteOpen: PropTypes.func.isRequired,
-};
 
 export default NotesTabColumns;

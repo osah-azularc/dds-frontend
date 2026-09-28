@@ -1,107 +1,115 @@
-import InfoIcon from '@mui/icons-material/Info';
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
-import { Box, Button, CircularProgress, Grid, Tab, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
-import DocketDetailView from './components/DocketDetailView';
-import Form1ActionsPanel from './components/Form1ActionsPanel';
-import Form1InfoFields from './components/Form1InfoFields';
-import TemporaryPermitSection from './components/TemporaryPermitSection';
-import styles from './Form1Style';
-import { useForm1Form } from './useForm1Form';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Box, CircularProgress, Grid, Typography } from '@mui/material';
+import GeneralInformationForm from './components/GeneralInformationForm';
+import DocumentPartyPanel from './components/DocumentPartyPanel';
+import DocketHeaderInfo from './components/DocketHeaderInfo';
+import DocketTabBar from './components/DocketTabBar';
+import useForm1New from './useForm1New';
 
+/**
+ * "Enter New Form 1" screen — DDS's own agency-facing Form 1 submission.
+ * Also reused, read-only, to review an existing docket at
+ * /form1/reqdt/:form1Id (reached by clicking a row in Docket Search) —
+ * useForm1New loads that docket's data instead of starting blank when a
+ * form1Id route param is present.
+ * Cross-checked against the legacy DDS portal's form1-new.phtml/
+ * form1-new-controller.js and form1.phtml (existing-docket review) — see
+ * CLAUDE.md's DDS reference-source list.
+ */
 const Form1 = () => {
-  const theme = useTheme();
-  const classes = styles(theme);
-  const [tab, setTab] = useState('1');
-  const { docketId } = useParams();
-  const location = useLocation();
-  const { form, formErrors, saving, isSaved, createdByName, handleFieldChange, handleSave } =
-    useForm1Form();
+  const { firstName, lastName } = useSelector((state) => state.user);
+  const {
+    form,
+    countyList,
+    countyListLoading,
+    saving,
+    handleFieldChange,
+    handleEligiblePermitChange,
+    handleEffectiveDateChange,
+    handleSave,
+    isExisting,
+    existingDocket,
+    parties,
+    loadingExisting,
+    updatingPermit,
+    handleUpdatePermit,
+    refetchAfterPartyChange,
+  } = useForm1New();
 
-  // Opened from a search results row (see SearchResultsPage's onRowClick) -
-  // show what that row already had instead of the "create new" form below.
-  if (docketId) {
-    return <DocketDetailView docketId={docketId} docket={location.state?.docket} />;
+  const createdBy = [firstName, lastName].filter(Boolean).join(' ');
+
+  if (loadingExisting) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <Grid container direction="row" justifyContent="flex-start" alignItems="flex-start">
-      <Grid item xs={12} sx={classes.HeaderSection}>
-        <Box sx={classes.HeaderContent}>
-          <Typography component="h1" variant="h1" color="secondary">
-            Enter New Form 1
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Created By: {createdByName}
-          </Typography>
-        </Box>
-      </Grid>
+    <Grid container>
+      {isExisting && existingDocket ? (
+        <>
+          <DocketHeaderInfo existingDocket={existingDocket} parties={parties} />
+          <Grid item xs={12}>
+            <DocketTabBar
+              status={existingDocket.status}
+              actualStatus={existingDocket.actualStatus}
+              form1Id={existingDocket.form1Id}
+              hasPetitioner={parties.some((party) => party.typeOfContact === 'Petitioner')}
+            />
+          </Grid>
+        </>
+      ) : (
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="h1">Enter New Form 1</Typography>
+            {createdBy && (
+              <Typography variant="body2">
+                <strong>Created By:</strong> {createdBy}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }} />
+        </Grid>
+      )}
 
       <Grid item xs={12}>
-        <TabContext value={tab}>
-          <Box sx={classes.TabListContainer}>
-            <TabList onChange={(_, newValue) => setTab(newValue)} aria-label="form1 tabs">
-              <Tab
-                icon={<InfoIcon fontSize="small" />}
-                iconPosition="start"
-                label="General Information"
-                value="1"
-              />
-            </TabList>
-          </Box>
-
-          <TabPanel value="1" className="CustomTabPanel">
-            <Grid container sx={classes.ContentContainer}>
-              <Grid item xs={12} md={4} sx={classes.LeftPanel}>
-                <Typography variant="h2" color="secondary" sx={classes.SectionTitle}>
-                  OSAH Form 1 Information
-                </Typography>
-                <Form1InfoFields
-                  form={form}
-                  formErrors={formErrors}
-                  onFieldChange={handleFieldChange}
-                />
-
-                <Box sx={classes.SectionSpacing}>
-                  <TemporaryPermitSection
-                    eligibleForPermit={form.eligibleForPermit}
-                    onChange={(value) => handleFieldChange('eligibleForPermit', value)}
-                    titleSx={classes.SectionTitle}
-                  />
-                </Box>
-
-                <Grid container spacing={2.5} sx={classes.SectionSpacing}>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSave}
-                      disabled={saving}
-                      startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
-                    >
-                      {saving ? 'Saving…' : 'Save'}
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-
-              <Grid item xs={12} md={8} sx={classes.RightPanel}>
-                <Box sx={classes.RightPanelContent}>
-                  <Form1ActionsPanel
-                    disabled={!isSaved}
-                    sectionTitleSx={classes.SectionTitle}
-                    sectionSpacingSx={classes.SectionSpacing}
-                  />
-                </Box>
-              </Grid>
-            </Grid>
-          </TabPanel>
-        </TabContext>
+        <Grid container sx={{ backgroundColor: '#f1f1f1' }}>
+          <Grid item xs={12} md={4}>
+            <GeneralInformationForm
+              form={form}
+              countyList={countyList}
+              countyListLoading={countyListLoading}
+              saving={saving}
+              onFieldChange={handleFieldChange}
+              onEligiblePermitChange={handleEligiblePermitChange}
+              onEffectiveDateChange={handleEffectiveDateChange}
+              onSave={handleSave}
+              readOnly={isExisting}
+              updatingPermit={updatingPermit}
+              onUpdatePermit={handleUpdatePermit}
+            />
+          </Grid>
+          <Grid item xs={12} md={8}>
+            <DocumentPartyPanel
+              parties={parties}
+              form1Id={isExisting ? existingDocket?.form1Id : undefined}
+              licenseNumberDefault={existingDocket?.agencyRefNumber}
+              onPartyChanged={refetchAfterPartyChange}
+              locked={isExisting && existingDocket?.actualStatus !== 'pending'}
+            />
+          </Grid>
+        </Grid>
       </Grid>
     </Grid>
   );

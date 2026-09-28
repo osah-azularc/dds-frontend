@@ -1,34 +1,40 @@
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import SearchIcon from '@mui/icons-material/Search';
+import React, { useCallback, useState } from 'react';
+import PropTypes from 'prop-types';
 import { Box, IconButton, TextField, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useState } from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
-import { SnackbarContext } from '../../../context/snackbarContext';
 import styles from './DocketSearchStyles';
+import { showWarningSnackbar } from '../../../utilities/ErrorSnackBar';
 
+// `showSearchOptions`/`setShowSearchOptions` are owned by Header.jsx (not local state here) so
+// it can force the panel closed on route change (see Header.jsx's own useLayoutEffect) -- that
+// covers every way a user can land on the results/detail page (Search button, docket-number
+// quick search, browser back/forward, a direct link), not just this component's own click
+// handlers. Matches the UI design team's own DocketSearch.jsx (dds-frontend-feature-ui-design).
 const DocketSearch = ({ showSearchOptions, setShowSearchOptions }) => {
   const theme = useTheme();
   const classes = styles(theme);
   const [docketNo, setDocketNo] = useState('');
-  const openSnackbar = useContext(SnackbarContext);
   const navigate = useNavigate();
 
   const handleDocketChange = (e) => {
     setDocketNo(e.target.value.replaceAll(/\D/g, ''));
   };
 
-  // TODO: the results page currently renders an empty grid until the DDS
-  // docket lookup endpoint exists on the backend - see useSearchResultsPage.
   const handleSearchByDocket = useCallback(() => {
     if (!docketNo) {
-      openSnackbar?.('Please enter a docket #', 'warning');
+      showWarningSnackbar('Please enter docket#');
       return;
     }
-    navigate('/search-results', { state: { searchType: 'docket', docketNo } });
-  }, [docketNo, openSnackbar, navigate]);
+
+    navigate(`/docket/${docketNo}`);
+    // Belt-and-suspenders: Header.jsx's route-based effect only watches for
+    // /search-results and the 4 /form1/.../reqdt/ routes, not this one.
+    setShowSearchOptions(false);
+  }, [docketNo, navigate, setShowSearchOptions]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -64,7 +70,7 @@ const DocketSearch = ({ showSearchOptions, setShowSearchOptions }) => {
             </IconButton>
           </Box>
         </Box>
-        <Box sx={classes.AdditionalOptionsToggle} onClick={toggleSearchOptions}>
+        <Box display="flex" mt={1} onClick={toggleSearchOptions} sx={{ cursor: 'pointer' }}>
           {showSearchOptions ? <RemoveIcon /> : <AddIcon />}
           <Typography variant="body1">Additional Search Options</Typography>
         </Box>

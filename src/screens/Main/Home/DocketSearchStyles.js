@@ -4,9 +4,6 @@ const styles = (theme) => ({
     padding: '120px 10px 20px 10px',
     background: 'rgba(255, 255, 255, .5)',
     borderBottom: '2px solid #d5d7db',
-    '@media (max-width: 1024px)': {
-      padding: '20px 10px',
-    },
   },
 
   DocketNumberBlockOuter: {
@@ -47,17 +44,6 @@ const styles = (theme) => ({
     px: theme.spacing(1),
     '& .MuiSvgIcon-root': {
       color: '#596171',
-    },
-  },
-
-  AdditionalOptionsToggle: {
-    display: 'flex',
-    alignItems: 'center',
-    mt: 1,
-    cursor: 'pointer',
-    color: '#36444f',
-    '& .MuiSvgIcon-root': {
-      fontSize: '20px',
     },
   },
 });

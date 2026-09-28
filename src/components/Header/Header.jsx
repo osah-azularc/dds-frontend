@@ -2,30 +2,24 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { AppBar, Box, Collapse, IconButton, Stack, Typography } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import React, { lazy, useCallback, useMemo, useState } from 'react';
+import React, { lazy, useCallback, useLayoutEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import AdditionalSearchOptions from '../../screens/Main/Home/AdditionalSearchOptions';
-import DocketSearch from '../../screens/Main/Home/DocketSearch';
 import MainLogo from '../MainLogo/MainLogo';
 import styles from './HeaderStyle';
+import DocketSearch from '../../screens/Main/Home/DocketSearch';
+import AdditionalSearchOptions from '../../screens/Main/Home/AdditionalSearchOptions';
+import { isDocketDetailRoute } from '../../utilities/docketDetailRoutes';
 
 const AccountPopover = lazy(() => import('../common/account-popover'));
 
-// The app's fixed-height ".FullHeight" flex column (App.css) makes plain
-// MUI Collapse's default overflow:hidden let flexbox treat this panel as
-// shrinkable to 0 (automatic minimum size = 0 for non-visible overflow),
-// so it gets squeezed out instead of growing the page. minHeight:auto
-// forces flexbox back to its content-based minimum, but only works paired
-// with the FULL overflow:visible shorthand on the root — splitting IT into
-// overflowX/overflowY makes the browser silently coerce the visible axis
-// back to 'auto' (per spec, when one axis isn't visible) which defeats
-// minHeight:auto again. PanelOuter's own overflow:hidden only clips the
-// Grid's negative-margin overflow within itself; it can't stop
-// .MuiCollapse-wrapper (an ancestor, needed as overflow:visible for the
-// root's height fix) from growing wider than the page if the Grid resists
-// shrinking, so the horizontal clip has to happen on wrapper itself instead
-// — that's a different element from the root, so it doesn't touch the
-// minHeight/overflow pairing the toggle depends on.
+// AppLayoutWrapper's ".FullHeight" is a flex column (App.css), which makes plain MUI Collapse's
+// default overflow:hidden let flexbox treat this panel as shrinkable to 0 (automatic minimum
+// size = 0 for non-visible overflow), so it gets squeezed out instead of growing the page.
+// minHeight:auto forces flexbox back to its content-based minimum, but only works paired with
+// the full overflow:visible shorthand on the root -- splitting it into overflowX/overflowY makes
+// the browser silently coerce the visible axis back to 'auto' (per spec, when one axis isn't
+// visible), defeating minHeight:auto again. Ported from the UI design team's own Header.jsx
+// (dds-frontend-feature-ui-design), which hit and fixed this exact bug.
 const SmoothCollapse = styled(Collapse)(({ theme }) => ({
   transition: theme.transitions.create(['height', 'opacity'], {
     easing: theme.transitions.easing.easeInOut,
@@ -62,15 +56,16 @@ const Header = () => {
 
   const isHome = location.pathname === '/home';
   const isSearchResults = location.pathname.startsWith('/search-results');
-  // /form1/:docketId (the detail view) - but not /form1 itself (the "new" form).
-  const isFormDetail = /^\/form1\/.+/.test(location.pathname);
+  const isFormDetail = isDocketDetailRoute(location.pathname);
   const showDocketSearch = isHome || isSearchResults || isFormDetail;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
 
-  // Close search options by default on arrival at the results/detail page
-  // instead of leaving whatever state it was left in on the Home page.
-  React.useLayoutEffect(() => {
+  // Force-closed on arrival at the results/detail page instead of leaving whatever state it was
+  // left in on Home -- covers every way a user can land there (Search button, docket-number
+  // quick search, browser back/forward, a direct link), not just the two in-app click handlers.
+  useLayoutEffect(() => {
     if (isSearchResults || isFormDetail) {
       setShowSearchOptions(false);
     }
@@ -80,21 +75,16 @@ const Header = () => {
     setMenuOpen((prev) => !prev);
   }, []);
 
-  const isNavLinkActive = useCallback(
-    (path) => {
-      if (path === '/home') {
-        return location.pathname === path;
-      }
-      return location.pathname === path || location.pathname.startsWith(`${path}/`);
-    },
-    [location.pathname],
-  );
-
   const handleNavLinkClick = useCallback(() => {
     if (!isDesktop) {
       setMenuOpen(false);
     }
   }, [isDesktop]);
+
+  const isNavLinkActive = useCallback(
+    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
+    [location.pathname],
+  );
 
   const renderNavLinks = useCallback(
     () => (
@@ -115,65 +105,67 @@ const Header = () => {
     [classes, isNavLinkActive, handleNavLinkClick],
   );
 
-  const navLinksMemo = useMemo(() => renderNavLinks(), [renderNavLinks]);
+  React.useEffect(() => {
+    if (isDesktop) {
+      setMenuOpen(false);
+    }
+  }, [isDesktop]);
 
   return (
-    <>
-      <Box sx={classes.HeaderOuter} component="header">
-        <AppBar sx={classes.HeaderPanel}>
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            width={1}
-            height={1}
-            sx={{
-              '@media (max-width: 1319px)': {
-                paddingTop: '8px',
-                paddingBottom: '8px',
-              },
-            }}
-          >
-            <Box display="flex" alignItems="center" minWidth={0} flex="1 1 auto">
-              {!isDesktop && (
-                <IconButton
-                  onClick={handleMenuToggle}
-                  sx={{ color: theme.palette.text.primary, flexShrink: 0 }}
-                  aria-label="Toggle menu"
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Box flexShrink={0}>
-                <MainLogo />
-              </Box>
-              {isDesktop && navLinksMemo}
+    <Box sx={classes.HeaderOuter} component="header">
+      <AppBar sx={classes.HeaderPanel}>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          width={1}
+          height={1}
+          sx={{
+            '@media (max-width: 1319px)': {
+              paddingTop: '8px',
+              paddingBottom: '8px',
+            },
+          }}
+        >
+          <Box display="flex" alignItems="center" minWidth={0} flex="1 1 auto">
+            {!isDesktop && (
+              <IconButton
+                onClick={handleMenuToggle}
+                sx={{ color: theme.palette.text.primary, flexShrink: 0 }}
+                aria-label="Toggle menu"
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+            <Box flexShrink={0}>
+              <MainLogo />
             </Box>
-
-            <Box display="flex" alignItems="center" flexShrink={0}>
-              <React.Suspense fallback={null}>
-                <AccountPopover />
-              </React.Suspense>
-            </Box>
+            {isDesktop && renderNavLinks()}
           </Box>
 
-          {!isDesktop && menuOpen && navLinksMemo}
-        </AppBar>
+          <Box display="flex" alignItems="center" flexShrink={0}>
+            <React.Suspense fallback={null}>
+              <AccountPopover />
+            </React.Suspense>
+          </Box>
+        </Box>
 
-        {showDocketSearch && (
-          <DocketSearch
-            showSearchOptions={showSearchOptions}
-            setShowSearchOptions={setShowSearchOptions}
-          />
-        )}
-      </Box>
+        {!isDesktop && menuOpen && renderNavLinks()}
+      </AppBar>
+
+      {showDocketSearch && (
+        <DocketSearch
+          showSearchOptions={showSearchOptions}
+          setShowSearchOptions={setShowSearchOptions}
+        />
+      )}
 
       {showDocketSearch && (
         <SmoothCollapse in={showSearchOptions}>
           <AdditionalSearchOptions />
         </SmoothCollapse>
       )}
-    </>
+    </Box>
   );
 };
 

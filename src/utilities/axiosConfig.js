@@ -3,7 +3,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { showErrorSnackbar } from './ErrorSnackBar';
 
-let baseURL = 'http://localhost:9002';
+let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:9002';
 
 export const SERVER_ERRORS = {
   NETWORK_ERROR: {

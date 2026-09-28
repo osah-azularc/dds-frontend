@@ -1,31 +1,35 @@
 /**
- * Initial form state for the Additional Search Options panel on the DDS home page.
+ * Constants for the Docket Search "Additional Search Options" panel.
+ *
+ * Field names in INITIAL_ADDITIONAL_SEARCH_FORM line up with dds-backend's
+ * generalSearchConditionSchema (dashboardValidators.js) so the payload can be
+ * sent to /dashboard/searchResult without renaming keys.
+ *
+ * AGENCY_OPTIONS / CASE_TYPE_OPTIONS are hardcoded, not fetched, because the
+ * legacy DDS portal hardcodes them too — DDS only ever searches ALS hearings
+ * for the DDS/DPS agencies (see
+ * osah.repos/module/Osahform/view/layout/dds-header.phtml, the Agency and
+ * Case Type <select> elements).
  */
-export const INITIAL_GENERAL_SEARCH_FORM = {
+export const AGENCY_OPTIONS = [
+  { label: 'DDS', value: 'DDS' },
+  { label: 'DPS', value: 'DPS' },
+];
+
+export const CASE_TYPE_OPTIONS = [{ label: 'ALS', value: 'ALS' }];
+
+export const INITIAL_ADDITIONAL_SEARCH_FORM = {
   lastName: '',
   firstName: '',
   contactType: null,
   agencyRefNumber: '',
   county: [],
   status: null,
-  agency: [],
-  caseType: [],
+  agency: null,
+  caseType: null,
   judge: null,
   judgeAssistant: null,
   hearingSite: null,
   hearingDateRange: [null, null],
   dateReceivedRange: [null, null],
 };
-
-// TODO: replace with real lookup data once the DDS backend exposes these
-// master-data endpoints (contact types, counties, statuses, agencies, case
-// types, judges, judge assistants, hearing sites). Empty for now so the
-// fields render correctly but have nothing to select.
-export const CONTACT_TYPE_LIST = [];
-export const COUNTY_LIST = [];
-export const STATUS_LIST = [];
-export const AGENCY_LIST = [];
-export const CASE_TYPE_LIST = [];
-export const JUDGE_LIST = [];
-export const JUDGE_ASSISTANT_LIST = [];
-export const HEARING_SITE_LIST = [];

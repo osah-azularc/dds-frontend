@@ -1,319 +1,165 @@
-import CloseIcon from '@mui/icons-material/Close';
+import React from 'react';
+import PropTypes from 'prop-types';
+import { FormProvider } from 'react-hook-form';
 import {
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   Grid,
-  IconButton,
-  Radio,
-  RadioGroup,
-  TextField,
   Typography,
 } from '@mui/material';
-import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
-import { CONTACT_TYPE_OPTIONS, US_STATE_OPTIONS } from '../constants/form1Constants';
-import Form1SelectField from './Form1SelectField';
-
-const FIELD_SX = { '& .MuiOutlinedInput-root': { backgroundColor: '#fff' } };
-
-const EMPTY_FORM = {
-  contactType: '',
-  lastName: '',
-  firstName: '',
-  middleName: '',
-  title: '',
-  companyName: '',
-  isInternational: 'no',
-  internationalAddress: '',
-  addressLine1: '',
-  addressLine2: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  phone: '',
-  email: '',
-  fax: '',
-};
-
-const splitName = (name = '') => {
-  const [firstName = '', ...rest] = name.trim().split(/\s+/);
-  return { firstName, lastName: rest.join(' ') };
-};
+import { CONTACT_TYPE_OPTIONS } from '../addPartyConstants';
+import useAddPartyForm from '../useAddPartyForm';
+import {
+  CONTACT_TYPE_VALIDATION_REQUIRED,
+  FIRST_NAME_VALIDATION_REQUIRED,
+  LAST_NAME_VALIDATION_REQUIRED,
+} from '../../../../utilities/validationPatterns';
+import { FormSelectField, FormTextField } from '../../../../components/common/reactHookFormFields';
+import { AddressFields } from './AddPartyAddressFields';
+import { LastNameSuggestField } from './addPartyFormFields';
+import { ContactMethodFields, TypeSpecificFields } from './AddPartyFormSections';
 
 /**
- * Add/Edit Party dialog for a Form 1 docket - mirrors the ecourt OSAH app's
- * AddPartiesComponent field layout (Contact Type, name, title/company,
- * international-address toggle, address, phone/email/fax) trimmed to a flat
- * form, since there's no per-contact-type show/hide rules or address/state
- * lookup data here yet.
+ * "Add Party" modal for the existing-docket review screen's Party
+ * Information section. Field set/visibility rules are ported from the
+ * legacy DDS portal's Add Party modal
+ * (osah.repos/module/Osahform/view/osahform/dds/form1.phtml, lines
+ * 586-897, and its form1-controller.js) -- Contact Type only ever offers
+ * Petitioner/Petitioner Attorney there (Officer belongs to the separate
+ * 1205-offence sub-form). Petitioner Attorney's Last Name field offers
+ * autocomplete suggestions from attorneybycase_master (ports
+ * autopopulateddsAction()/getddsinformationAction()). Built directly on
+ * ecourt-frontend's own AddPartiesComponent.jsx / useAddPartiesForm.js /
+ * addPartiesFormFields.jsx (react-hook-form + Controller, inline per-field
+ * errors, unregister-hidden-fields) rather than a bespoke pattern -- every
+ * field stays fully editable even after autopopulating from a suggestion.
+ * Also doubles as the Edit Party dialog (isEditMode/editData), matching
+ * ecourt-frontend's own AddPartiesComponent.jsx reuse pattern -- one dialog
+ * for both, since the field set is identical.
  */
-const AddPartyModal = ({ open, party, onClose, onSave }) => {
-  const isEditMode = Boolean(party);
-  const [form, setForm] = useState(EMPTY_FORM);
+const AddPartyModal = ({
+  open,
+  onClose,
+  form1Id,
+  licenseNumberDefault,
+  editData,
+  isEditMode,
+  onSaved,
+}) => {
+  const {
+    formMethods,
+    isPetitioner,
+    isAttorney,
+    isInternational,
+    showAltAddress,
+    toggleAltAddress,
+    stateOptions,
+    nameSuggestions,
+    suggestionsLoading,
+    saving,
+    handleSelectSuggestion,
+    handleSave,
+  } = useAddPartyForm({
+    open,
+    form1Id,
+    licenseNumberDefault,
+    editData,
+    isEditMode,
+    onSaved,
+    onClose,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    if (party) {
-      setForm({
-        ...EMPTY_FORM,
-        ...splitName(party.name),
-        contactType: party.role ?? '',
-        phone: party.phone ?? '',
-        email: party.email ?? '',
-        fax: party.fax ?? '',
-      });
-    } else {
-      setForm(EMPTY_FORM);
-    }
-  }, [open, party]);
-
-  const handleFieldChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const isInternational = form.isInternational === 'yes';
-  const canSave =
-    Boolean(form.contactType) &&
-    Boolean(form.lastName) &&
-    (isInternational
-      ? Boolean(form.internationalAddress)
-      : Boolean(form.addressLine1) && Boolean(form.city) && Boolean(form.state) && Boolean(form.zipCode));
-
-  const handleSave = () => {
-    if (!canSave) return;
-    onSave({
-      role: form.contactType,
-      name: `${form.firstName} ${form.lastName}`.trim(),
-      title: form.title,
-      companyName: form.companyName,
-      isInternational,
-      internationalAddress: form.internationalAddress,
-      addressLine1: form.addressLine1,
-      addressLine2: form.addressLine2,
-      city: form.city,
-      state: form.state,
-      zipCode: form.zipCode,
-      phone: form.phone,
-      email: form.email,
-      fax: form.fax,
-    });
-  };
+  const saveLabel = isEditMode ? 'Update' : 'Save';
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ pr: 6 }}>
-        <Typography variant="h2">{isEditMode ? 'Edit Party' : 'Add New Party'}</Typography>
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
-        >
-          <CloseIcon />
-        </IconButton>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        <Typography variant="h2">{isEditMode ? 'Edit Party' : 'Add Party'}</Typography>
       </DialogTitle>
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <Form1SelectField
-              label="Contact Type *"
-              options={CONTACT_TYPE_OPTIONS}
-              value={form.contactType}
-              onChange={(value) => handleFieldChange('contactType', value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Last Name *"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.lastName}
-              onChange={(e) => handleFieldChange('lastName', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="First Name"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.firstName}
-              onChange={(e) => handleFieldChange('firstName', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Middle Name"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.middleName}
-              onChange={(e) => handleFieldChange('middleName', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Title"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.title}
-              onChange={(e) => handleFieldChange('title', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={8}>
-            <TextField
-              label="Company Name"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.companyName}
-              onChange={(e) => handleFieldChange('companyName', e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              Is this an international address?
-            </Typography>
-            <RadioGroup
-              row
-              value={form.isInternational}
-              onChange={(e) => handleFieldChange('isInternational', e.target.value)}
-            >
-              <FormControlLabel value="yes" control={<Radio />} label="Yes" />
-              <FormControlLabel value="no" control={<Radio />} label="No" />
-            </RadioGroup>
-          </Grid>
-
-          {isInternational ? (
+        <FormProvider {...formMethods}>
+          <Grid container spacing={3}>
             <Grid item xs={12}>
-              <TextField
-                label="International Address *"
-                variant="outlined"
-                fullWidth
-                minRows={4}
-                multiline
-                sx={FIELD_SX}
-                value={form.internationalAddress}
-                onChange={(e) => handleFieldChange('internationalAddress', e.target.value)}
+              <FormSelectField
+                name="contactType"
+                label="Contact Type *"
+                options={CONTACT_TYPE_OPTIONS}
+                rules={CONTACT_TYPE_VALIDATION_REQUIRED}
               />
             </Grid>
-          ) : (
-            <>
-              <Grid item xs={12}>
-                <TextField
-                  label="Address Line 1 *"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  sx={FIELD_SX}
-                  value={form.addressLine1}
-                  onChange={(e) => handleFieldChange('addressLine1', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Address Line 2"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  sx={FIELD_SX}
-                  value={form.addressLine2}
-                  onChange={(e) => handleFieldChange('addressLine2', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="City *"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  sx={FIELD_SX}
-                  value={form.city}
-                  onChange={(e) => handleFieldChange('city', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Form1SelectField
-                  label="State *"
-                  options={US_STATE_OPTIONS}
-                  value={form.state}
-                  onChange={(value) => handleFieldChange('state', value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Zip Code *"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  sx={FIELD_SX}
-                  value={form.zipCode}
-                  onChange={(e) => handleFieldChange('zipCode', e.target.value)}
-                />
-              </Grid>
-            </>
-          )}
 
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Phone"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.phone}
-              onChange={(e) => handleFieldChange('phone', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Email"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.email}
-              onChange={(e) => handleFieldChange('email', e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              label="Fax"
-              variant="outlined"
-              fullWidth
-              size="small"
-              sx={FIELD_SX}
-              value={form.fax}
-              onChange={(e) => handleFieldChange('fax', e.target.value)}
-            />
-          </Grid>
+            <Grid item xs={12} sm={6}>
+              {isAttorney ? (
+                <>
+                  <LastNameSuggestField
+                    rules={LAST_NAME_VALIDATION_REQUIRED}
+                    suggestions={nameSuggestions}
+                    onSelectSuggestion={handleSelectSuggestion}
+                  />
+                  {suggestionsLoading && (
+                    <Typography variant="caption" color="text.secondary">
+                      Loading records…
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <FormTextField
+                  name="lastName"
+                  label="Last Name *"
+                  rules={LAST_NAME_VALIDATION_REQUIRED}
+                />
+              )}
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormTextField
+                name="firstName"
+                label="First Name *"
+                rules={FIRST_NAME_VALIDATION_REQUIRED}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormTextField name="middleName" label="Middle Name" />
+            </Grid>
 
-          <Grid item xs={12}>
-            <Typography variant="caption" color="text.secondary">
-              * Required Fields
-            </Typography>
+            <TypeSpecificFields isPetitioner={isPetitioner} isAttorney={isAttorney} />
+
+            <AddressFields
+              isInternational={isInternational}
+              stateOptions={stateOptions}
+              showAltButton={isPetitioner}
+              showAltAddress={showAltAddress}
+              onToggleAlt={toggleAltAddress}
+            />
+
+            <ContactMethodFields />
+
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                * Required Fields
+              </Typography>
+            </Grid>
           </Grid>
-        </Grid>
+        </FormProvider>
       </DialogContent>
       <DialogActions>
-        <Grid container spacing={2} justifyContent="center">
-          <Grid item xs={12} sm={6} md={3}>
-            <Button onClick={onClose} color="secondary" fullWidth>
+        <Grid container spacing={2} justifyContent="center" sx={{ pb: 2 }}>
+          <Grid item xs={12} sm={4}>
+            <Button fullWidth color="secondary" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button onClick={handleSave} disabled={!canSave} fullWidth>
-              {isEditMode ? 'Update' : 'Save'}
+          <Grid item xs={12} sm={4}>
+            <Button
+              fullWidth
+              onClick={handleSave}
+              disabled={saving}
+              startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
+            >
+              {saving ? 'Saving…' : saveLabel}
             </Button>
           </Grid>
         </Grid>
@@ -324,19 +170,19 @@ const AddPartyModal = ({ open, party, onClose, onSave }) => {
 
 AddPartyModal.propTypes = {
   open: PropTypes.bool.isRequired,
-  party: PropTypes.shape({
-    role: PropTypes.string,
-    name: PropTypes.string,
-    phone: PropTypes.string,
-    email: PropTypes.string,
-    fax: PropTypes.string,
-  }),
   onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
+  form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  licenseNumberDefault: PropTypes.string,
+  editData: PropTypes.object,
+  isEditMode: PropTypes.bool,
+  onSaved: PropTypes.func,
 };
 
 AddPartyModal.defaultProps = {
-  party: null,
+  licenseNumberDefault: '',
+  editData: null,
+  isEditMode: false,
+  onSaved: undefined,
 };
 
-export default AddPartyModal;
+export default React.memo(AddPartyModal);
