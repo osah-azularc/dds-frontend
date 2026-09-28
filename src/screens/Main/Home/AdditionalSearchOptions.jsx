@@ -1,8 +1,7 @@
-import React, { useCallback, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Collapse, Grid, TextField } from '@mui/material';
+import { Box, Button, Grid, TextField } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   selectJudgeList,
@@ -36,7 +35,12 @@ import {
  * and commancontroller.js. Agency/Case Type are fixed single-selects there
  * (DDS only searches ALS hearings for the DDS/DPS agencies), not dynamic
  * lists — see searchConstants.js. The rest of the dropdown data comes from
- * dashboardFiltersSlice, loaded on first expand.
+ * dashboardFiltersSlice, loaded on mount.
+ *
+ * Visibility/collapse animation are owned by Header.jsx (SmoothCollapse
+ * wraps this component from outside), matching the UI design team's own
+ * AdditionalSearchOptions.jsx (dds-frontend-feature-ui-design) -- this
+ * component no longer needs to know whether it's currently shown.
  */
 // SingleSelectFilter/SearchMultiSelectFilter store the whole { label, value }
 // option (or an array of them for multi-select), not the raw value.
@@ -68,7 +72,7 @@ const buildSearchCondition = (form) => {
   return condition;
 };
 
-const AdditionalSearchOptions = ({ showSearchOptions, onSearch }) => {
+const AdditionalSearchOptions = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const judgeList = useSelector(selectJudgeList);
@@ -86,12 +90,12 @@ const AdditionalSearchOptions = ({ showSearchOptions, onSearch }) => {
     setForm((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  // Load dropdown data lazily the first time the panel is opened.
-  const handleEntered = useCallback(() => {
+  useEffect(() => {
     if (!filtersInitialized && !filtersLoading) {
       dispatch(loadDashboardFilters());
     }
-  }, [dispatch, filtersInitialized, filtersLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch]);
 
   const handleSearch = useCallback(() => {
     const hasHearingDateRange = form.hearingDateRange.some(Boolean);
@@ -119,11 +123,10 @@ const AdditionalSearchOptions = ({ showSearchOptions, onSearch }) => {
     navigate('/search-results', {
       state: { filters: buildSearchCondition(form), searchType: 'general' },
     });
-    onSearch?.();
-  }, [form, navigate, onSearch]);
+  }, [form, navigate]);
 
   return (
-    <Collapse in={showSearchOptions} onEntered={handleEntered}>
+    <>
       <Box sx={{ backgroundColor: '#f0f1f3', px: { xs: 2, md: 4 }, py: 3 }}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
@@ -270,17 +273,8 @@ const AdditionalSearchOptions = ({ showSearchOptions, onSearch }) => {
           </Button>
         </Box>
       </Box>
-    </Collapse>
+    </>
   );
-};
-
-AdditionalSearchOptions.propTypes = {
-  showSearchOptions: PropTypes.bool.isRequired,
-  onSearch: PropTypes.func,
-};
-
-AdditionalSearchOptions.defaultProps = {
-  onSearch: undefined,
 };
 
 export default React.memo(AdditionalSearchOptions);

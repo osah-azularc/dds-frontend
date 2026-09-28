@@ -20,7 +20,7 @@ import { showErrorSnackbar, showSuccessSnackbar } from '../../../utilities/Error
 import { INITIAL_FORM1205_FORM } from './form1205Constants';
 import {
   toDateString,
-  combineIncidentTime,
+  formatIncidentTime,
   mapSearchResultToFormValues,
 } from './form1205FieldMappers';
 
@@ -196,11 +196,7 @@ const useForm1205Form = ({ form1Id, prefill }) => {
         citation: values.citation,
         countyOccur: values.countyOccur?.value || '',
         incidentDate: toDateString(values.incidentDate),
-        incidentTime: combineIncidentTime(
-          values.incidentTimeHour,
-          values.incidentTimeMinute,
-          values.incidentTimePeriod,
-        ),
+        incidentTime: formatIncidentTime(values.incidentTime),
         officerBadgeNumber: values.officerBadgeNumber,
         commercialVehicle: values.commercialVehicle,
         hazardousVehicle: values.hazardousVehicle,

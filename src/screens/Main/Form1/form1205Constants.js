@@ -20,7 +20,6 @@ export const GENDER_OPTIONS = [
 
 export const FEET_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 export const INCHES_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i));
-export const TIME_PERIOD_OPTIONS = ['AM', 'PM'];
 
 // "Driver was requested to submit to test and:*" -- values '1'-'4' match legacy's
 // ng-value on the same four radio options exactly.
@@ -36,9 +35,7 @@ export const INITIAL_FORM1205_FORM = {
   citation: '',
   countyOccur: null,
   incidentDate: null,
-  incidentTimeHour: '',
-  incidentTimeMinute: '',
-  incidentTimePeriod: 'AM',
+  incidentTime: null,
   officerBadgeNumber: '',
   commercialVehicle: '0',
   hazardousVehicle: '0',

@@ -1,28 +1,37 @@
-import { Box, Button, Stack } from '@mui/material';
+import { Box, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
+import styles from './HomeStyles';
 
-const ctaButtonSx = {
-  width: 320,
-  py: 1.75,
-};
-
+// Keeps <Link>-rendered buttons (real <a> tags -- right-click/open-in-new-tab, keyboard nav)
+// rather than the UI design team's onClick-navigate() version of this page
+// (dds-frontend-feature-ui-design); only the hero background/button sizing is adopted from it.
 const Home = () => {
+  const theme = useTheme();
+  const classes = styles(theme);
+
   return (
-    <Box sx={{ py: 6, textAlign: 'center' }}>
-      <Stack spacing={3} alignItems="center">
-        <Button component={Link} to="/form1" variant="contained" color="primary" sx={ctaButtonSx}>
-          Enter New Form 1
-        </Button>
-        <Button
-          component={Link}
-          to="/temporary-permits"
-          variant="contained"
-          color="primary"
-          sx={ctaButtonSx}
-        >
-          Temporary Permits
-        </Button>
-      </Stack>
+    <Box sx={classes.HeroActionsSection}>
+      <Button
+        component={Link}
+        to="/form1"
+        variant="contained"
+        color="primary"
+        size="large"
+        sx={classes.HeroActionButton}
+      >
+        Enter New Form 1
+      </Button>
+      <Button
+        component={Link}
+        to="/temporary-permits"
+        variant="contained"
+        color="primary"
+        size="large"
+        sx={classes.HeroActionButton}
+      >
+        Temporary Permits
+      </Button>
     </Box>
   );
 };

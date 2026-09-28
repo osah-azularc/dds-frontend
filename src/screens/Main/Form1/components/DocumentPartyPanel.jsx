@@ -35,8 +35,17 @@ import PartyInfoCard from './PartyInfoCard';
  * MuiButton override already renders as the grayed-out state. Add Party is
  * only enabled once the docket exists (`form1Id` set), matching the rest of
  * this panel's create-flow-disabled convention.
+ *
+ * `locked` (true once an existing docket's status is anything but Draft --
+ * see Form1.jsx) hides Add Party outright, ports form1.phtml's own
+ * `ng-show="readonly_flag=='0'"` on that same button (legacy locks once
+ * status is Approved/In Review/Rejected/Closed, matching DDS's own
+ * actualStatus !== 'pending' convention already used elsewhere, e.g.
+ * Form1205Form.jsx/DocketTabBar.jsx). Passed through to PartyInfoCard too,
+ * which hides its own Delete icon the same way (form1.phtml's
+ * `ng-if="disable_btn_flg=='0'"`).
  */
-const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyChanged }) => {
+const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyChanged, locked }) => {
   const [addPartyOpen, setAddPartyOpen] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [partyToDelete, setPartyToDelete] = useState(null);
@@ -102,17 +111,19 @@ const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyCha
             Party Information
           </Typography>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button
-            color="primary"
-            startIcon={<AddIcon />}
-            fullWidth
-            disabled={!form1Id}
-            onClick={() => setAddPartyOpen(true)}
-          >
-            Add Party
-          </Button>
-        </Grid>
+        {!locked && (
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              color="primary"
+              startIcon={<AddIcon />}
+              fullWidth
+              disabled={!form1Id}
+              onClick={() => setAddPartyOpen(true)}
+            >
+              Add Party
+            </Button>
+          </Grid>
+        )}
         {parties.length === 0 ? (
           <Grid item xs={12}>
             <Typography variant="body2" color="text.secondary">
@@ -122,7 +133,12 @@ const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyCha
         ) : (
           parties.map((party) => (
             <Grid item xs={12} sm={6} key={party.partyId}>
-              <PartyInfoCard party={party} onEdit={setEditingParty} onDelete={setPartyToDelete} />
+              <PartyInfoCard
+                party={party}
+                onEdit={setEditingParty}
+                onDelete={setPartyToDelete}
+                locked={locked}
+              />
             </Grid>
           ))
         )}
@@ -166,11 +182,13 @@ DocumentPartyPanel.propTypes = {
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   licenseNumberDefault: PropTypes.string,
   onPartyChanged: PropTypes.func,
+  locked: PropTypes.bool,
 };
 
 DocumentPartyPanel.defaultProps = {
   parties: [],
   form1Id: undefined,
+  locked: false,
   licenseNumberDefault: '',
   onPartyChanged: undefined,
 };

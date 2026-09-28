@@ -56,10 +56,10 @@ const OfficerInformationSection = ({ control, stateOptions, locked }) => {
 
   return (
     <>
-      <Typography variant="h2" color="secondary" sx={{ mt: 4, mb: 2 }}>
+      <Typography variant="h2" color="secondary" sx={{ mt: 4, mb: 2.5 }}>
         Officer Information
       </Typography>
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         <Grid item xs={12}>
           <FormRadioField
             name="isNewOfficer"

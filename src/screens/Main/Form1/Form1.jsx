@@ -106,6 +106,7 @@ const Form1 = () => {
               form1Id={isExisting ? existingDocket?.form1Id : undefined}
               licenseNumberDefault={existingDocket?.agencyRefNumber}
               onPartyChanged={refetchAfterPartyChange}
+              locked={isExisting && existingDocket?.actualStatus !== 'pending'}
             />
           </Grid>
         </Grid>

@@ -78,25 +78,31 @@ const Form1205Form = () => {
                 locked={isReviewLocked}
               />
 
-              <Grid container spacing={3} sx={{ mt: 1 }}>
+              <Grid container spacing={2} sx={{ mt: 4 }}>
                 <Grid item xs={12}>
                   <Typography variant="caption" color="text.secondary">
                     * Required Fields
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm="auto">
                   <Button
                     color="secondary"
-                    fullWidth
                     onClick={handleSave}
                     disabled={saving || isReviewLocked}
+                    startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
+                    sx={{ minWidth: 180 }}
                   >
-                    {saving ? <CircularProgress size={20} /> : 'Save For Later'}
+                    Save For Later
                   </Button>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Button fullWidth onClick={handleSubmitForm} disabled={saving || isReviewLocked}>
-                    {saving ? <CircularProgress size={20} /> : 'Submit'}
+                <Grid item xs={12} sm="auto">
+                  <Button
+                    onClick={handleSubmitForm}
+                    disabled={saving || isReviewLocked}
+                    startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
+                    sx={{ minWidth: 180 }}
+                  >
+                    Submit
                   </Button>
                 </Grid>
               </Grid>

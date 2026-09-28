@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { stripLeadingWhitespace } from '../../utilities/formFieldHelpers';
 
 const FIELD_SX = {
@@ -20,6 +19,11 @@ const FIELD_SX = {
     backgroundColor: '#fff',
     '&.Mui-disabled': { backgroundColor: '#f5f5f5' },
   },
+  // The select's content <div> otherwise gets a taller line box than a plain
+  // <input> at the same padding/font-size, rendering a couple px taller than
+  // sibling TextFields in the same row (harmless on TextField/Autocomplete --
+  // the selector only matches the select variant's own inner div).
+  '& .MuiSelect-select': { lineHeight: '1.4375em' },
 };
 
 /**
@@ -191,57 +195,6 @@ FormRadioField.propTypes = {
 };
 
 FormRadioField.defaultProps = { rules: undefined, onChangeExtra: undefined, disabled: false };
-
-/**
- * Controller-wrapped MUI X DatePicker with the same inline-error treatment
- * as the other fields here (error/helperText via slotProps.textField).
- */
-export const FormDateField = ({ name, label, rules, maxDate, disabled }) => {
-  const {
-    control,
-    clearErrors,
-    formState: { errors },
-  } = useFormContext();
-  return (
-    <Controller
-      name={name}
-      control={control}
-      rules={rules}
-      render={({ field: { onChange, value, ...field } }) => (
-        <DatePicker
-          {...field}
-          label={label}
-          value={value ?? null}
-          maxDate={maxDate}
-          disabled={disabled}
-          onChange={(newValue) => {
-            clearErrors(name);
-            onChange(newValue);
-          }}
-          slotProps={{
-            textField: {
-              fullWidth: true,
-              size: 'small',
-              sx: FIELD_SX,
-              error: !!errors[name],
-              helperText: errors[name]?.message,
-            },
-          }}
-        />
-      )}
-    />
-  );
-};
-
-FormDateField.propTypes = {
-  name: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  rules: PropTypes.object,
-  maxDate: PropTypes.object,
-  disabled: PropTypes.bool,
-};
-
-FormDateField.defaultProps = { rules: undefined, maxDate: undefined, disabled: false };
 
 /**
  * Controller-wrapped Autocomplete for a {label, value} option list (e.g.

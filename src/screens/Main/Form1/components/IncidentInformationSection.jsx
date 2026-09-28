@@ -3,11 +3,14 @@ import PropTypes from 'prop-types';
 import { Grid, Typography } from '@mui/material';
 import {
   FormAutocompleteField,
-  FormDateField,
   FormRadioField,
   FormSelectField,
   FormTextField,
 } from '../../../../components/common/reactHookFormFields';
+import {
+  FormDateField,
+  FormTimeField,
+} from '../../../../components/common/reactHookFormDateTimeFields';
 import { FEET_OPTIONS, GENDER_OPTIONS, INCHES_OPTIONS } from '../form1205Constants';
 import {
   CITATION_VALIDATION_REQUIRED,
@@ -15,7 +18,6 @@ import {
   DOB_VALIDATION_REQUIRED,
   INCIDENT_DATE_VALIDATION_REQUIRED,
 } from '../form1205ValidationRules';
-import IncidentTimeField from './IncidentTimeField';
 
 /**
  * "Incident Information" section of the Form 1205 screen -- maps onto
@@ -38,10 +40,10 @@ const IncidentInformationSection = ({
   disabled,
 }) => (
   <>
-    <Typography variant="h2" color="secondary" sx={{ mb: 2 }}>
+    <Typography variant="h2" color="secondary" sx={{ mb: 2.5 }}>
       Incident Information
     </Typography>
-    <Grid container spacing={3}>
+    <Grid container spacing={2.5}>
       <Grid item xs={12} sm={6} md={3}>
         <FormTextField
           name="citation"
@@ -71,7 +73,7 @@ const IncidentInformationSection = ({
         />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <IncidentTimeField disabled={disabled} />
+        <FormTimeField name="incidentTime" label="Incident Time" disabled={disabled} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
         <FormTextField name="officerBadgeNumber" label="Officer Badge Number" disabled={disabled} />

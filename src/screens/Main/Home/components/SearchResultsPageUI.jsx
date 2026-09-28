@@ -23,7 +23,11 @@ const DATAGRID_SLOTS = { noRowsOverlay: SearchNoRowsOverlay, loadingOverlay: Sea
 
 const COLUMN_HEADER_HEIGHT = 50;
 const ROW_HEIGHT = 44;
-const TABLE_MIN_HEIGHT = 250;
+// header + a definite-height "no rows"/loading overlay (100px, see dataGridStyles.js) -- a
+// min-height the container can grow past, not a hard cap, so the footer/pagination bar is
+// never squeezed out once real rows (or a wide pageSize's loading overlay) need more room.
+// Matches the UI design team's own SearchResultsPage.jsx (dds-frontend-feature-ui-design).
+const TABLE_MIN_HEIGHT = COLUMN_HEADER_HEIGHT + 100;
 const PAGE_SIZE_OPTIONS = [50, 100, 150, 200, 250, 300];
 
 /**
@@ -71,7 +75,7 @@ export function SearchResultsPageUI({
             </Box>
           </Grid>
           <Grid item xs={12} pt={2}>
-            <Box sx={{ height: `${TABLE_MIN_HEIGHT}px` }}>
+            <Box sx={{ minHeight: `${TABLE_MIN_HEIGHT}px` }}>
               <DataGridPro
                 autoHeight={false}
                 rows={loading ? [] : rows}
@@ -99,12 +103,7 @@ export function SearchResultsPageUI({
                   ...SEARCH_RESULTS_DATAGRID_STYLES,
                   ...NO_ROWS_OVERLAY_SX,
                   height: '100%',
-                  ...(loading && {
-                    '& .MuiDataGrid-overlayWrapper, & .MuiDataGrid-overlayWrapperInner': {
-                      height: `${pageSize * ROW_HEIGHT}px !important`,
-                      minHeight: `${pageSize * ROW_HEIGHT}px !important`,
-                    },
-                  }),
+                  minHeight: `${TABLE_MIN_HEIGHT}px`,
                   '& .MuiDataGrid-cell': {
                     display: 'flex',
                     alignItems: 'center',

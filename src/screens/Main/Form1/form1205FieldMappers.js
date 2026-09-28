@@ -3,23 +3,24 @@ import dayjs from 'dayjs';
 /**
  * Pure field-shape helpers for the Form 1205 screen's Incident Information section -- split
  * out of useForm1205Form.js to keep that file under this project's 300-line limit. Incident
- * Time and Height are each split across three/two plain-useState fields on the form
- * (IncidentTimeField.jsx, the feet/inches Height selects) but stored as one column each on
- * form1_dds_1205_offence (incident_time, height), matching legacy's own single-field storage.
+ * Time is a single FormTimeField (a dayjs value) on the form but stored as one "h:mm A" string
+ * column on form1_dds_1205_offence (incident_time); Height is likewise two feet/inches selects
+ * on the form but one "5'10" string column, matching legacy's own single-field storage.
  */
 
 export const toDateString = (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '');
 
-export const combineIncidentTime = (hour, minute, period) =>
-  hour && minute ? `${hour}:${minute} ${period || 'AM'}` : '';
+export const formatIncidentTime = (value) => (value?.isValid?.() ? value.format('h:mm A') : '');
 
-// Parses "10:30 AM" back into the three IncidentTimeField parts. Returns nulls (caller falls
-// back to the previous value) for anything that doesn't match, rather than partially updating.
-export const splitIncidentTime = (value) => {
-  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(String(value || '').trim());
-  if (!match) return { hour: null, minute: null, period: null };
-  const [, hour, minute, period] = match;
-  return { hour, minute, period: period.toUpperCase() };
+// Parses "10:30 AM" back into a dayjs value for FormTimeField. Falls back to a loose parse for
+// anything not in that exact shape (matches FormDateField's own typed-date leniency), and
+// returns null (caller falls back to the previous value) if nothing parses.
+export const parseIncidentTime = (value) => {
+  if (!value) return null;
+  const strict = dayjs(value, ['h:mm A', 'H:mm', 'HH:mm'], true);
+  if (strict.isValid()) return strict;
+  const loose = dayjs(value);
+  return loose.isValid() ? loose : null;
 };
 
 // Parses "5'10" back into feet/inches. Returns nulls for anything that doesn't match. (Height
@@ -40,7 +41,6 @@ export const splitHeight = (value) => {
 // this response carries), so useForm1205Form.js reconstructs each once its own options list
 // (countyList/stateOptions) has loaded, the same way it already does for countyOccur.
 export const mapSearchResultToFormValues = (data) => {
-  const time = splitIncidentTime(data.incidentTime);
   const height = splitHeight(data.height);
 
   const values = {
@@ -59,9 +59,7 @@ export const mapSearchResultToFormValues = (data) => {
     officerBadgeNumber: data.badgeNo,
     citation: data.citiation,
     incidentDate: data.incidentDate ? dayjs(data.incidentDate) : undefined,
-    incidentTimeHour: time.hour,
-    incidentTimeMinute: time.minute,
-    incidentTimePeriod: time.period,
+    incidentTime: parseIncidentTime(data.incidentTime),
     commercialVehicle: data.commercialVehicle,
     hazardousVehicle: data.hazourdousVehicle,
     licenseClass: data.licenseClassId,
