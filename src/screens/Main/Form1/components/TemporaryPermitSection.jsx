@@ -1,11 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, CircularProgress, Grid, MenuItem, TextField, Typography } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { ELIGIBLE_PERMIT_OPTIONS } from '../constants';
+import Form1DatePicker from './Form1DatePicker';
 
 const FIELD_SX = { '& .MuiOutlinedInput-root': { backgroundColor: '#fff' } };
-const datePickerSlotProps = { textField: { fullWidth: true, size: 'small', sx: FIELD_SX } };
 
 /**
  * "Temporary Permit" panel — shared by the "Enter New Form 1" screen and
@@ -65,37 +64,33 @@ const TemporaryPermitSection = ({
         {isEligible && (
           <>
             <Grid item xs={12} sm={6}>
-              <DatePicker
+              <Form1DatePicker
                 label="Permit Effective Date *"
                 value={form.permitEffectiveDate}
                 onChange={onEffectiveDateChange}
-                slotProps={datePickerSlotProps}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <DatePicker
+              <Form1DatePicker
                 label="Permit Expiration Date *"
                 value={form.permitExpiryDate}
                 disabled
-                slotProps={datePickerSlotProps}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <DatePicker
+              <Form1DatePicker
                 label="Date of Birth *"
                 value={form.dob}
                 onChange={(value) => onFieldChange({ dob: value })}
                 maxDate={today()}
-                slotProps={datePickerSlotProps}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <DatePicker
+              <Form1DatePicker
                 label="Incident Date *"
                 value={form.incidentDate}
                 onChange={(value) => onFieldChange({ incidentDate: value })}
                 maxDate={today()}
-                slotProps={datePickerSlotProps}
               />
             </Grid>
           </>

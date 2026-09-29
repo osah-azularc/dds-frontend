@@ -32,6 +32,7 @@ const Form1 = () => {
     existingDocket,
     parties,
     documents,
+    disposition,
     loadingExisting,
     updatingPermit,
     handleUpdatePermit,
@@ -105,6 +106,7 @@ const Form1 = () => {
             <DocumentPartyPanel
               parties={parties}
               documents={documents}
+              disposition={disposition}
               form1Id={isExisting ? existingDocket?.form1Id : undefined}
               licenseNumberDefault={existingDocket?.agencyRefNumber}
               onPartyChanged={refetchAfterPartyChange}

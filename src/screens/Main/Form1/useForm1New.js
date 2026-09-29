@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -15,7 +15,7 @@ import {
 } from '../../../utilities/ErrorSnackBar';
 import { addDdsDocket, searchDocketInfo, updateDdsDocket } from '../../../services/form1Service';
 import { getForm1Parties } from '../../../services/form1PartyService';
-import { getForm1Documents } from '../../../services/form1DocumentService';
+import useForm1DocumentsAndDisposition from './useForm1DocumentsAndDisposition';
 import {
   AGENCY_CODE,
   CASE_TYPE,
@@ -50,15 +50,21 @@ const useForm1New = () => {
   const [saving, setSaving] = useState(false);
   const [existingDocket, setExistingDocket] = useState(null);
   const [parties, setParties] = useState([]);
-  const [documents, setDocuments] = useState([]);
   const [permitInfo, setPermitInfo] = useState(null);
   const [loadingExisting, setLoadingExisting] = useState(isExisting);
   const [updatingPermit, setUpdatingPermit] = useState(false);
+  const { documents, disposition } = useForm1DocumentsAndDisposition(form1Id, isExisting);
 
+  // `attemptedFilterLoad` gates this to one dispatch per mount. Without it,
+  // a failed loadDashboardFilters() (e.g. an expired session) flips
+  // countyListLoading back to false without ever setting initialized, which
+  // re-satisfies this effect's own condition and re-dispatches immediately
+  // -- a tight infinite retry loop with no backoff, hammering the backend.
+  const attemptedFilterLoad = useRef(false);
   useEffect(() => {
-    if (!countyListInitialized && !countyListLoading) {
-      dispatch(loadDashboardFilters());
-    }
+    if (countyListInitialized || countyListLoading || attemptedFilterLoad.current) return;
+    attemptedFilterLoad.current = true;
+    dispatch(loadDashboardFilters());
   }, [dispatch, countyListInitialized, countyListLoading]);
 
   // Default County to "No County" once the list has loaded, matching legacy's
@@ -100,16 +106,10 @@ const useForm1New = () => {
     setParties(data);
   }, [form1Id]);
 
-  const loadDocuments = useCallback(async () => {
-    const data = await getForm1Documents(form1Id);
-    setDocuments(data);
-  }, [form1Id]);
-
   useEffect(() => {
     if (!isExisting) return;
     loadExistingDocket();
     loadParties();
-    loadDocuments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExisting, form1Id]);
 
@@ -284,6 +284,7 @@ const useForm1New = () => {
     isExisting,
     existingDocket,
     parties,
+    disposition,
     documents,
     loadingExisting,
     updatingPermit,

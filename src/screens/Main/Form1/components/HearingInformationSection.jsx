@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Grid, TextField, Typography } from '@mui/material';
+import Form1DatePicker from './Form1DatePicker';
 
 const FIELD_SX = { '& .MuiOutlinedInput-root': { backgroundColor: '#fff' } };
 
@@ -10,6 +11,12 @@ const FIELD_SX = { '& .MuiOutlinedInput-root': { backgroundColor: '#fff' } };
  * after submission, so this only ever has data once a docket is approved —
  * matches the legacy DDS portal's form1.phtml Hearing Information block,
  * all fields disabled there too (agencies can't edit hearing assignment).
+ *
+ * Hearing Date renders through Form1DatePicker (disabled) rather than a
+ * plain TextField with a manually-formatted string -- it used to show
+ * MM-DD-YYYY with no calendar icon while Form 1205's date fields
+ * (FormDateField) show MUI's default format with a calendar icon in a
+ * clickable IconButton. Form1DatePicker matches that exactly.
  */
 const HearingInformationSection = ({
   hearingSite,
@@ -34,14 +41,7 @@ const HearingInformationSection = ({
         />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <TextField
-          label="Hearing Date"
-          fullWidth
-          size="small"
-          value={hearingDate}
-          disabled
-          sx={FIELD_SX}
-        />
+        <Form1DatePicker label="Hearing Date" value={hearingDate} disabled />
       </Grid>
       <Grid item xs={12} sm={6}>
         <TextField
@@ -72,7 +72,7 @@ const HearingInformationSection = ({
 
 HearingInformationSection.propTypes = {
   hearingSite: PropTypes.string,
-  hearingDate: PropTypes.string,
+  hearingDate: PropTypes.object,
   hearingTime: PropTypes.string,
   judge: PropTypes.string,
   judgeAssistant: PropTypes.string,
@@ -80,7 +80,7 @@ HearingInformationSection.propTypes = {
 
 HearingInformationSection.defaultProps = {
   hearingSite: '',
-  hearingDate: '',
+  hearingDate: null,
   hearingTime: '',
   judge: '',
   judgeAssistant: '',

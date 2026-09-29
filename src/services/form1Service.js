@@ -30,6 +30,18 @@ export const searchDocketInfo = async (form1Id) => {
 };
 
 /**
+ * Resolves the DDS Form 1 (form1Id) whose eCourt case id matches the given
+ * docket number -- the Home page header's "Docket Number" quick search
+ * (DocketSearch.jsx) searches by that eCourt id, not the internal form1Id,
+ * matching legacy's own dds-form1/getForm1Id (DdsForm1Controller::
+ * getForm1IdAction()). Returns null when no Form 1 has that docket number.
+ */
+export const getForm1IdByDocketNumber = async (docketId) => {
+  const response = await axiosInstance.post('/dds-form1/getForm1Id', { docketId });
+  return response?.data?.data?.form1Id ?? null;
+};
+
+/**
  * Saves the Temporary Permit edits made on the existing-docket review
  * screen (/form1/reqdt/:form1Id). Field names match dds-backend's
  * ddsForm1Validators.js exactly — note `incidentDate` here, not
@@ -54,4 +66,10 @@ export const deleteDdsDocket = async (form1Id) => {
   return response?.data;
 };
 
-export default { addDdsDocket, searchDocketInfo, updateDdsDocket, deleteDdsDocket };
+export default {
+  addDdsDocket,
+  searchDocketInfo,
+  getForm1IdByDocketNumber,
+  updateDdsDocket,
+  deleteDdsDocket,
+};

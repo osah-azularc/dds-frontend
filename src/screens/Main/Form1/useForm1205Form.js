@@ -123,10 +123,14 @@ const useForm1205Form = ({ form1Id, prefill }) => {
     reset((previous) => ({ ...previous, stateOfIssue: match }));
   }, [fetchedData, stateOptions, reset]);
 
+  // See useForm1New.js's own copy of this guard for why attemptedFilterLoad
+  // is needed: without it, a failed loadDashboardFilters() re-satisfies this
+  // effect's condition and retries immediately with no backoff, looping.
+  const attemptedFilterLoadRef = useRef(false);
   useEffect(() => {
-    if (!countyListInitialized && !countyListLoading) {
-      dispatch(loadDashboardFilters());
-    }
+    if (countyListInitialized || countyListLoading || attemptedFilterLoadRef.current) return;
+    attemptedFilterLoadRef.current = true;
+    dispatch(loadDashboardFilters());
   }, [dispatch, countyListInitialized, countyListLoading]);
 
   useEffect(() => {

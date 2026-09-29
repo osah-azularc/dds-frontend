@@ -7,7 +7,8 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import styles from './DocketSearchStyles';
-import { showWarningSnackbar } from '../../../utilities/ErrorSnackBar';
+import { showErrorSnackbar, showWarningSnackbar } from '../../../utilities/ErrorSnackBar';
+import { getForm1IdByDocketNumber } from '../../../services/form1Service';
 
 // `showSearchOptions`/`setShowSearchOptions` are owned by Header.jsx (not local state here) so
 // it can force the panel closed on route change (see Header.jsx's own useLayoutEffect) -- that
@@ -24,15 +25,25 @@ const DocketSearch = ({ showSearchOptions, setShowSearchOptions }) => {
     setDocketNo(e.target.value.replaceAll(/\D/g, ''));
   };
 
-  const handleSearchByDocket = useCallback(() => {
+  // Matches legacy's own getForm1(docketId) (commancontroller.js): this box
+  // searches by the eCourt case id, not DDS's internal form1Id, so it must
+  // resolve one to the other first (dds-form1/getForm1Id) before navigating.
+  const handleSearchByDocket = useCallback(async () => {
     if (!docketNo) {
       showWarningSnackbar('Please enter docket#');
       return;
     }
 
-    navigate(`/docket/${docketNo}`);
-    // Belt-and-suspenders: Header.jsx's route-based effect only watches for
-    // /search-results and the 4 /form1/.../reqdt/ routes, not this one.
+    const form1Id = await getForm1IdByDocketNumber(docketNo);
+    if (!form1Id) {
+      showErrorSnackbar('No records found');
+      return;
+    }
+
+    navigate(`/form1/reqdt/${form1Id}`);
+    // Header.jsx's own route-based effect also force-closes this on arrival
+    // at any /form1/.../reqdt/ route; closing it here too just avoids a
+    // one-frame flash of the still-open panel while that effect catches up.
     setShowSearchOptions(false);
   }, [docketNo, navigate, setShowSearchOptions]);
 

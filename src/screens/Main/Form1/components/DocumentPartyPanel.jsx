@@ -7,6 +7,7 @@ import { deleteForm1Party } from '../../../../services/form1PartyService';
 import { showErrorSnackbar, showSuccessSnackbar } from '../../../../utilities/ErrorSnackBar';
 import AddPartyModal from './AddPartyModal';
 import DocumentTable from './DocumentTable';
+import DispositionInfo from './DispositionInfo';
 import PartyInfoCard from './PartyInfoCard';
 
 /**
@@ -49,10 +50,16 @@ import PartyInfoCard from './PartyInfoCard';
  * (see form1DocumentService.js) -- Document Templates/Files stay disabled
  * above since uploading/adding a document is a separate feature not wired
  * up yet.
+ *
+ * `disposition` sources DispositionInfo's read-only fields from
+ * /docketDetail/getDisposition (form1DispositionService.js). Add Decision
+ * stays disabled -- legacy's own DDS module has no working submit action for
+ * it (see docketDetailPageRoutes.js's docblock), only this read.
  */
 const DocumentPartyPanel = ({
   parties,
   documents,
+  disposition,
   form1Id,
   licenseNumberDefault,
   onPartyChanged,
@@ -117,6 +124,7 @@ const DocumentPartyPanel = ({
             Add Decision
           </Button>
         </Grid>
+        <DispositionInfo disposition={disposition} />
 
         <Grid item xs={12} sx={{ mt: 2 }}>
           <Typography variant="h2" color="secondary">
@@ -200,6 +208,16 @@ DocumentPartyPanel.propTypes = {
       description: PropTypes.string,
     }),
   ),
+  disposition: PropTypes.arrayOf(
+    PropTypes.shape({
+      dispositionCode: PropTypes.string,
+      hearingYesNo: PropTypes.string,
+      boxNo: PropTypes.string,
+      dispositionDate: PropTypes.string,
+      signedByJudge: PropTypes.string,
+      mailedDate: PropTypes.string,
+    }),
+  ),
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   licenseNumberDefault: PropTypes.string,
   onPartyChanged: PropTypes.func,
@@ -209,6 +227,7 @@ DocumentPartyPanel.propTypes = {
 DocumentPartyPanel.defaultProps = {
   parties: [],
   documents: [],
+  disposition: [],
   form1Id: undefined,
   locked: false,
   licenseNumberDefault: '',
