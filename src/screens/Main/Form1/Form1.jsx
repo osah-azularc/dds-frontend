@@ -31,6 +31,7 @@ const Form1 = () => {
     isExisting,
     existingDocket,
     parties,
+    documents,
     loadingExisting,
     updatingPermit,
     handleUpdatePermit,
@@ -103,6 +104,7 @@ const Form1 = () => {
           <Grid item xs={12} md={8}>
             <DocumentPartyPanel
               parties={parties}
+              documents={documents}
               form1Id={isExisting ? existingDocket?.form1Id : undefined}
               licenseNumberDefault={existingDocket?.agencyRefNumber}
               onPartyChanged={refetchAfterPartyChange}

@@ -40,7 +40,7 @@ export const FIELD_MAPPING = {
   hearingDate: 'hearingDate',
   hearingTime: 'hearingTime',
   hearingLocation: 'hearingSite',
-  docket: 'form1Id',
+  docket: 'ecourtCaseid',
   caseName: 'caseName',
   caseType: 'caseType',
   judge: 'judge',
@@ -64,7 +64,10 @@ export const transformSearchResults = (searchResults) =>
     return {
       id: item.form1Id || index + 1,
       form1Id: item.form1Id,
-      docket: item.form1Id || 'N/A',
+      // Displays the eCourt case id (legacy: `caseid`, '...' until the
+      // docket is assigned one) -- form1Id is only used for the row's link,
+      // never shown, matching legacy's searchresult.phtml.
+      docket: item.ecourtCaseid || '...',
       caseName,
       caseType: item.caseType || '...',
       dateReceived: formatDate(item.dateReceivedByOSAH),

@@ -20,8 +20,9 @@ const NO_ROWS_OVERLAY_PROPS = { message: 'No records found.' };
  * like ecourt-frontend's own DocumentGridTable.jsx (DataGridPro, shared
  * NoRowsOverlay empty state -- see that component's own docblock for why a
  * plain `localeText.noRowsLabel` string doesn't reliably show with zero
- * rows). No documents endpoint is wired up yet, so `documents` is always
- * empty for now.
+ * rows). `documents` comes from dds-backend's /docketDetail/documents (see
+ * form1DocumentService.js/useForm1New.js), scoped to this Form 1's own
+ * caseId/Docket_caseid.
  */
 const DocumentTable = ({ documents }) => (
   <Box sx={{ mt: 1 }}>

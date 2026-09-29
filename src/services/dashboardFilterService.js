@@ -74,7 +74,7 @@ const formatUsersByType = (userType, data = []) =>
       label: `${item.lastName || ''}, ${item.firstName || ''}`
         .replace(/^, /, '')
         .replace(/, $/, ''),
-      value: item.userId,
+      value: String(item.userId),
       id: item.userId,
     })),
   );

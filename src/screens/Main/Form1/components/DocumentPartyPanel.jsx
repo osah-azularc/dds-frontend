@@ -44,8 +44,20 @@ import PartyInfoCard from './PartyInfoCard';
  * Form1205Form.jsx/DocketTabBar.jsx). Passed through to PartyInfoCard too,
  * which hides its own Delete icon the same way (form1.phtml's
  * `ng-if="disable_btn_flg=='0'"`).
+ *
+ * `documents` now sources the table from dds-backend's /docketDetail/documents
+ * (see form1DocumentService.js) -- Document Templates/Files stay disabled
+ * above since uploading/adding a document is a separate feature not wired
+ * up yet.
  */
-const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyChanged, locked }) => {
+const DocumentPartyPanel = ({
+  parties,
+  documents,
+  form1Id,
+  licenseNumberDefault,
+  onPartyChanged,
+  locked,
+}) => {
   const [addPartyOpen, setAddPartyOpen] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [partyToDelete, setPartyToDelete] = useState(null);
@@ -92,7 +104,7 @@ const DocumentPartyPanel = ({ parties, form1Id, licenseNumberDefault, onPartyCha
           </Button>
         </Grid>
         <Grid item xs={12}>
-          <DocumentTable documents={[]} />
+          <DocumentTable documents={documents} />
         </Grid>
 
         <Grid item xs={12} sx={{ mt: 2 }}>
@@ -179,6 +191,15 @@ DocumentPartyPanel.propTypes = {
       fax: PropTypes.string,
     }),
   ),
+  documents: PropTypes.arrayOf(
+    PropTypes.shape({
+      documentId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      documentType: PropTypes.string,
+      documentName: PropTypes.string,
+      dateRequested: PropTypes.string,
+      description: PropTypes.string,
+    }),
+  ),
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   licenseNumberDefault: PropTypes.string,
   onPartyChanged: PropTypes.func,
@@ -187,6 +208,7 @@ DocumentPartyPanel.propTypes = {
 
 DocumentPartyPanel.defaultProps = {
   parties: [],
+  documents: [],
   form1Id: undefined,
   locked: false,
   licenseNumberDefault: '',
