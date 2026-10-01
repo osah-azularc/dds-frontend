@@ -20,7 +20,7 @@ import { FormRadioField, FormTextField } from '../../../../components/common/rea
  * suggestion only sets initial values, it never locks anything (see
  * useAddPartyForm.js's docblock).
  */
-export const TypeSpecificFields = ({ isPetitioner, isAttorney }) => {
+export const TypeSpecificFields = ({ isPetitioner, isAttorney, disabled }) => {
   if (isPetitioner) {
     return (
       <Grid item xs={12} sm={6}>
@@ -28,6 +28,7 @@ export const TypeSpecificFields = ({ isPetitioner, isAttorney }) => {
           name="licenseNumber"
           label="License Number *"
           rules={LICENSE_NUMBER_VALIDATION_REQUIRED}
+          disabled={disabled}
         />
       </Grid>
     );
@@ -42,15 +43,17 @@ export const TypeSpecificFields = ({ isPetitioner, isAttorney }) => {
           name="isNewContact"
           label="Is this a new party or new address? *"
           rules={NEW_CONTACT_VALIDATION_REQUIRED}
+          disabled={disabled}
         />
       </Grid>
       <Grid item xs={12} sm={6}>
-        <FormTextField name="attorneyBar" label="Attorney Bar #" />
+        <FormTextField name="attorneyBar" label="Attorney Bar #" disabled={disabled} />
       </Grid>
       <Grid item xs={12} sm={6}>
         <FormTextField
           name="company"
           label="Company Name (If there is no company, please enter a title, i.e. Attorney at Law)"
+          disabled={disabled}
         />
       </Grid>
     </>
@@ -60,9 +63,14 @@ export const TypeSpecificFields = ({ isPetitioner, isAttorney }) => {
 TypeSpecificFields.propTypes = {
   isPetitioner: PropTypes.bool.isRequired,
   isAttorney: PropTypes.bool.isRequired,
+  disabled: PropTypes.bool,
 };
 
-export const ContactMethodFields = () => (
+TypeSpecificFields.defaultProps = {
+  disabled: false,
+};
+
+export const ContactMethodFields = ({ disabled }) => (
   <>
     <Grid item xs={12} sm={4}>
       <FormTextField
@@ -72,10 +80,17 @@ export const ContactMethodFields = () => (
         formatter={formatPhoneOrFaxNumber}
         placeholder="(XXX) XXX-XXXX"
         inputProps={{ maxLength: 14 }}
+        disabled={disabled}
       />
     </Grid>
     <Grid item xs={12} sm={4}>
-      <FormTextField name="email" label="Email" rules={EMAIL_VALIDATION} type="email" />
+      <FormTextField
+        name="email"
+        label="Email"
+        rules={EMAIL_VALIDATION}
+        type="email"
+        disabled={disabled}
+      />
     </Grid>
     <Grid item xs={12} sm={4}>
       <FormTextField
@@ -85,7 +100,16 @@ export const ContactMethodFields = () => (
         formatter={formatPhoneOrFaxNumber}
         placeholder="(XXX) XXX-XXXX"
         inputProps={{ maxLength: 14 }}
+        disabled={disabled}
       />
     </Grid>
   </>
 );
+
+ContactMethodFields.propTypes = {
+  disabled: PropTypes.bool,
+};
+
+ContactMethodFields.defaultProps = {
+  disabled: false,
+};

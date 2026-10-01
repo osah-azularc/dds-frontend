@@ -48,25 +48,58 @@ DetailRow.defaultProps = { value: '' };
  *
  * `locked` (see DocumentPartyPanel.jsx) hides the Delete icon, matching
  * legacy's own `ng-if="disable_btn_flg=='0'"` on that same trash icon in
- * form1.phtml. Edit stays visible (legacy leaves its icon unconditional
- * too, locking the modal's own fields instead) -- AddPartyModal.jsx doesn't
- * yet lock its fields for a non-Draft docket, so this is a partial port;
- * flagged rather than silently left out.
+ * form1.phtml. `canDelete` additionally hides it by the viewer's DDS
+ * usertype (see utilities/form1Capabilities.js) -- helpdesk never gets it.
+ * Edit stays visible unconditionally, matching legacy's own icon (also
+ * unconditional there) -- a viewer without edit capability can still open
+ * the dialog to look at a party's data, AddPartyModal just renders every
+ * field read-only for them instead (ports form1.phtml's "Add-Party modal's
+ * fields always disabled for helpdesk" rule onto the dialog, not the icon).
+ *
+ * `viewOnly` (dds_superuser's docket-detail view -- see Form1.jsx/
+ * DocumentPartyPanel.jsx) replaces the Edit/Delete icons with a single
+ * "View More" link instead -- there's no party-edit capability on that raw
+ * `docket`-table view at all (no form1Id to save against), so an icon that
+ * looks editable would be misleading. Opens the exact same dialog
+ * (AddPartyModal) via the same onEdit callback, just always forced
+ * read-only by the caller.
  */
-const PartyInfoCard = ({ party, onEdit, onDelete, locked }) => (
+const PartyInfoCard = ({ party, onEdit, onDelete, locked, canDelete, viewOnly }) => (
   <Box sx={CARD_SX}>
     <Grid container sx={CARD_TOP_SX} alignItems="center">
       <Grid item xs={6}>
         <Typography variant="h4">{party.typeOfContact || 'Contact'}</Typography>
       </Grid>
       <Grid item xs={6} display="flex" justifyContent="flex-end">
-        <IconButton onClick={() => onEdit(party)} aria-label="Edit party">
-          <EditIcon color="secondary" fontSize="small" />
-        </IconButton>
-        {!locked && (
-          <IconButton onClick={() => onDelete(party)} aria-label="Delete party">
-            <DeleteIcon color="secondary" fontSize="small" />
-          </IconButton>
+        {viewOnly ? (
+          <Box
+            component="button"
+            type="button"
+            onClick={() => onEdit(party)}
+            sx={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              font: 'inherit',
+              color: 'text.secondary',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            View More
+          </Box>
+        ) : (
+          <>
+            <IconButton onClick={() => onEdit(party)} aria-label="Edit party">
+              <EditIcon color="secondary" fontSize="small" />
+            </IconButton>
+            {!locked && canDelete && (
+              <IconButton onClick={() => onDelete(party)} aria-label="Delete party">
+                <DeleteIcon color="secondary" fontSize="small" />
+              </IconButton>
+            )}
+          </>
         )}
       </Grid>
     </Grid>
@@ -107,10 +140,14 @@ PartyInfoCard.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   locked: PropTypes.bool,
+  canDelete: PropTypes.bool,
+  viewOnly: PropTypes.bool,
 };
 
 PartyInfoCard.defaultProps = {
   locked: false,
+  canDelete: false,
+  viewOnly: false,
 };
 
 export default React.memo(PartyInfoCard);

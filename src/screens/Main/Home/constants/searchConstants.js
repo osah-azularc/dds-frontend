@@ -18,6 +18,14 @@ export const AGENCY_OPTIONS = [
 
 export const CASE_TYPE_OPTIONS = [{ label: 'ALS', value: 'ALS' }];
 
+// dds_superuser's own Status dropdown is just Open/Closed (not the full DDS status list,
+// and no "All" option) -- matches legacy's dds-header.phtml, which renders a completely
+// different <select> for that usertype on this same field.
+export const SUPERUSER_STATUS_OPTIONS = [
+  { label: 'Open', value: 'open' },
+  { label: 'Closed', value: 'closed' },
+];
+
 export const INITIAL_ADDITIONAL_SEARCH_FORM = {
   lastName: '',
   firstName: '',

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { useSelector } from 'react-redux';
 import DeleteDialogue from '../../../../components/common/DeleteDialogue';
 import { deleteForm1Party } from '../../../../services/form1PartyService';
 import { showErrorSnackbar, showSuccessSnackbar } from '../../../../utilities/ErrorSnackBar';
+import { FORM1_CAPABILITIES, hasForm1Capability } from '../../../../utilities/form1Capabilities';
 import AddPartyModal from './AddPartyModal';
 import DocumentTable from './DocumentTable';
 import DispositionInfo from './DispositionInfo';
@@ -46,6 +48,20 @@ import PartyInfoCard from './PartyInfoCard';
  * which hides its own Delete icon the same way (form1.phtml's
  * `ng-if="disable_btn_flg=='0'"`).
  *
+ * `canCreateParty`/`canEditParty`/`canDeleteParty` (utilities/
+ * form1Capabilities.js) additionally gate by the viewer's DDS usertype,
+ * matching legacy's helpdesk restriction: Add Party hidden, Delete icon
+ * hidden, and the Add/Edit-Party dialog itself opened `readOnly` (its
+ * fields/Save button disabled, view-only) instead of hiding its Edit icon --
+ * legacy leaves that icon unconditional too (form1.phtml:1350-1351).
+ *
+ * `viewOnly` (dds_superuser's docket-detail view -- see Form1.jsx) is a step
+ * further than helpdesk's readOnly dialog: there's no form1Id at all on that
+ * raw `docket`-table view (nothing to save against even if the viewer could
+ * edit), so PartyInfoCard shows a "View More" link instead of an Edit icon,
+ * and the dialog itself opens without requiring form1Id, forced readOnly
+ * unconditionally.
+ *
  * `documents` now sources the table from dds-backend's /docketDetail/documents
  * (see form1DocumentService.js) -- Document Templates/Files stay disabled
  * above since uploading/adding a document is a separate feature not wired
@@ -55,19 +71,30 @@ import PartyInfoCard from './PartyInfoCard';
  * /docketDetail/getDisposition (form1DispositionService.js). Add Decision
  * stays disabled -- legacy's own DDS module has no working submit action for
  * it (see docketDetailPageRoutes.js's docblock), only this read.
+ * `docketStatus` is passed straight through to DispositionInfo, which only
+ * renders the fetched row when status is Closed/Reconsideration -- a
+ * disposition row from a prior closure can still linger after a case is
+ * reopened/rescheduled (see DispositionInfo.jsx).
  */
 const DocumentPartyPanel = ({
   parties,
   documents,
   disposition,
+  docketStatus,
   form1Id,
   licenseNumberDefault,
   onPartyChanged,
   locked,
+  viewOnly,
 }) => {
   const [addPartyOpen, setAddPartyOpen] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [partyToDelete, setPartyToDelete] = useState(null);
+
+  const userType = useSelector((state) => state.user.user_type);
+  const canCreateParty = hasForm1Capability(userType, FORM1_CAPABILITIES.PARTY_CREATE);
+  const canEditParty = hasForm1Capability(userType, FORM1_CAPABILITIES.PARTY_EDIT);
+  const canDeleteParty = hasForm1Capability(userType, FORM1_CAPABILITIES.PARTY_DELETE);
 
   const isEditMode = Boolean(editingParty);
 
@@ -119,19 +146,23 @@ const DocumentPartyPanel = ({
             Disposition
           </Typography>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button color="primary" startIcon={<AddIcon />} fullWidth disabled>
-            Add Decision
-          </Button>
+        <Grid item xs={12}>
+          <Grid container>
+            <Grid item xs={12} sm={6} md={3}>
+              <Button color="primary" startIcon={<AddIcon />} fullWidth disabled>
+                Add Decision
+              </Button>
+            </Grid>
+          </Grid>
         </Grid>
-        <DispositionInfo disposition={disposition} />
+        <DispositionInfo disposition={disposition} status={docketStatus} />
 
         <Grid item xs={12} sx={{ mt: 2 }}>
           <Typography variant="h2" color="secondary">
             Party Information
           </Typography>
         </Grid>
-        {!locked && (
+        {!locked && canCreateParty && (
           <Grid item xs={12} sm={6} md={3}>
             <Button
               color="primary"
@@ -158,13 +189,15 @@ const DocumentPartyPanel = ({
                 onEdit={setEditingParty}
                 onDelete={setPartyToDelete}
                 locked={locked}
+                canDelete={canDeleteParty}
+                viewOnly={viewOnly}
               />
             </Grid>
           ))
         )}
       </Grid>
 
-      {form1Id && (
+      {(form1Id || (viewOnly && isEditMode)) && (
         <AddPartyModal
           open={addPartyOpen || isEditMode}
           onClose={handleModalClose}
@@ -173,6 +206,7 @@ const DocumentPartyPanel = ({
           editData={editingParty}
           isEditMode={isEditMode}
           onSaved={handleModalSaved}
+          readOnly={viewOnly || (isEditMode ? !canEditParty : !canCreateParty)}
         />
       )}
 
@@ -218,20 +252,24 @@ DocumentPartyPanel.propTypes = {
       mailedDate: PropTypes.string,
     }),
   ),
+  docketStatus: PropTypes.string,
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   licenseNumberDefault: PropTypes.string,
   onPartyChanged: PropTypes.func,
   locked: PropTypes.bool,
+  viewOnly: PropTypes.bool,
 };
 
 DocumentPartyPanel.defaultProps = {
   parties: [],
   documents: [],
   disposition: [],
+  docketStatus: '',
   form1Id: undefined,
   locked: false,
   licenseNumberDefault: '',
   onPartyChanged: undefined,
+  viewOnly: false,
 };
 
 export default React.memo(DocumentPartyPanel);

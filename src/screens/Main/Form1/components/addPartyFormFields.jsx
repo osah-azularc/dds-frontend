@@ -21,7 +21,7 @@ const buildSuggestionLabel = (option) =>
  * Party-specific (the suggestion lookup), so it stays in this file rather
  * than the shared components/common/reactHookFormFields.jsx.
  */
-export const LastNameSuggestField = ({ rules, suggestions, onSelectSuggestion }) => {
+export const LastNameSuggestField = ({ rules, suggestions, onSelectSuggestion, disabled }) => {
   const {
     control,
     clearErrors,
@@ -35,6 +35,7 @@ export const LastNameSuggestField = ({ rules, suggestions, onSelectSuggestion })
       render={({ field: { onChange, value } }) => (
         <Autocomplete
           freeSolo
+          disabled={disabled}
           options={suggestions}
           value={value ?? ''}
           inputValue={value ?? ''}
@@ -76,10 +77,12 @@ LastNameSuggestField.propTypes = {
   rules: PropTypes.object,
   suggestions: PropTypes.array,
   onSelectSuggestion: PropTypes.func,
+  disabled: PropTypes.bool,
 };
 
 LastNameSuggestField.defaultProps = {
   rules: undefined,
   suggestions: [],
   onSelectSuggestion: undefined,
+  disabled: false,
 };

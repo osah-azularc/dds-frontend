@@ -22,6 +22,7 @@ import {
   INITIAL_ADDITIONAL_SEARCH_FORM,
   AGENCY_OPTIONS,
   CASE_TYPE_OPTIONS,
+  SUPERUSER_STATUS_OPTIONS,
 } from './constants/searchConstants';
 
 /**
@@ -78,11 +79,16 @@ const AdditionalSearchOptions = () => {
   const judgeList = useSelector(selectJudgeList);
   const judgeAssistantList = useSelector(selectJudgeAssistantList);
   const countyList = useSelector(selectCountyList);
-  const statusList = useSelector(selectStatusList);
+  const ddsStatusList = useSelector(selectStatusList);
   const contactTypeList = useSelector(selectContactTypeList);
   const hearingSiteList = useSelector(selectHearingSiteList);
   const filtersInitialized = useSelector(selectDashboardFilterInitialized);
   const filtersLoading = useSelector(selectDashboardFilterLoading);
+  const isSuperuser = useSelector((state) => state.user.user_type) === 'dds_superuser';
+  // dds_superuser gets a fixed Open/Closed status list (no "All"), not the full DDS status
+  // list -- matches legacy's dds-header.phtml, a different <select> for that usertype on
+  // this same field (see searchConstants.js).
+  const statusList = isSuperuser ? SUPERUSER_STATUS_OPTIONS : ddsStatusList;
 
   const [form, setForm] = useState(INITIAL_ADDITIONAL_SEARCH_FORM);
 
@@ -186,10 +192,10 @@ const AdditionalSearchOptions = () => {
             <SingleSelectFilter
               label="Status"
               options={statusList}
-              includeAllOption
+              includeAllOption={!isSuperuser}
               value={form.status}
               onChange={(value) => handleFieldChange({ status: value })}
-              loading={filtersLoading}
+              loading={!isSuperuser && filtersLoading}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>

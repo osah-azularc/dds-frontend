@@ -3,12 +3,14 @@ import { AppBar, Box, Collapse, IconButton, Stack, Typography } from '@mui/mater
 import { styled, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import React, { lazy, useCallback, useLayoutEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import MainLogo from '../MainLogo/MainLogo';
 import styles from './HeaderStyle';
 import DocketSearch from '../../screens/Main/Home/DocketSearch';
 import AdditionalSearchOptions from '../../screens/Main/Home/AdditionalSearchOptions';
-import { isDocketDetailRoute } from '../../utilities/docketDetailRoutes';
+import { useShowDocketSearch } from '../../hooks/useShowDocketSearch';
+import { FORM1_CAPABILITIES, hasForm1Capability } from '../../utilities/form1Capabilities';
 
 const AccountPopover = lazy(() => import('../common/account-popover'));
 
@@ -41,6 +43,10 @@ const SmoothCollapse = styled(Collapse)(({ theme }) => ({
   },
 }));
 
+// Hidden entirely for dds_superuser (canViewNav below), matching legacy's own
+// dds-header.phtml:16 `ng-if="user_type!='dds_superuser'"` on this same nav --
+// that usertype has no Home/Form1/Temporary Permits/Rejected Form1's flow of
+// its own, only the docket-search experience above it.
 const NAV_LINKS = [
   { label: 'HOME', path: '/home' },
   { label: 'FORM1', path: '/form1' },
@@ -53,11 +59,10 @@ const Header = () => {
   const classes = styles(theme);
   const isDesktop = useMediaQuery('(min-width:1321px)');
   const location = useLocation();
-
-  const isHome = location.pathname === '/home';
-  const isSearchResults = location.pathname.startsWith('/search-results');
-  const isFormDetail = isDocketDetailRoute(location.pathname);
-  const showDocketSearch = isHome || isSearchResults || isFormDetail;
+  const userType = useSelector((state) => state.user.user_type);
+  const canViewNav = hasForm1Capability(userType, FORM1_CAPABILITIES.NAV_VIEW);
+  const { isHome, isSearchResults, isFormDetail, isSuperuser, showDocketSearch } =
+    useShowDocketSearch();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
@@ -65,11 +70,21 @@ const Header = () => {
   // Force-closed on arrival at the results/detail page instead of leaving whatever state it was
   // left in on Home -- covers every way a user can land there (Search button, docket-number
   // quick search, browser back/forward, a direct link), not just the two in-app click handlers.
+  // Applies to every usertype now, including dds_superuser: after actually submitting a
+  // search, the panel collapses so the results table gets the room back, same as the
+  // regular clerk flow. dds_superuser has no Home/Form1 nav of its own (canViewNav above)
+  // though, so Home -- the only place that usertype ever starts a search from -- still
+  // force-opens it instead of leaving it collapsed by default, including once userType
+  // itself finishes loading (e.g. straight from a shared link).
   useLayoutEffect(() => {
     if (isSearchResults || isFormDetail) {
       setShowSearchOptions(false);
+      return;
     }
-  }, [isSearchResults, isFormDetail]);
+    if (isSuperuser && isHome) {
+      setShowSearchOptions(true);
+    }
+  }, [isHome, isSearchResults, isFormDetail, isSuperuser]);
 
   const handleMenuToggle = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -128,7 +143,7 @@ const Header = () => {
           }}
         >
           <Box display="flex" alignItems="center" minWidth={0} flex="1 1 auto">
-            {!isDesktop && (
+            {!isDesktop && canViewNav && (
               <IconButton
                 onClick={handleMenuToggle}
                 sx={{ color: theme.palette.text.primary, flexShrink: 0 }}
@@ -140,7 +155,7 @@ const Header = () => {
             <Box flexShrink={0}>
               <MainLogo />
             </Box>
-            {isDesktop && renderNavLinks()}
+            {isDesktop && canViewNav && renderNavLinks()}
           </Box>
 
           <Box display="flex" alignItems="center" flexShrink={0}>
@@ -150,7 +165,7 @@ const Header = () => {
           </Box>
         </Box>
 
-        {!isDesktop && menuOpen && renderNavLinks()}
+        {!isDesktop && canViewNav && menuOpen && renderNavLinks()}
       </AppBar>
 
       {showDocketSearch && (

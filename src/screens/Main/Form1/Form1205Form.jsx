@@ -1,8 +1,11 @@
 import React from 'react';
 import { Box, Button, CircularProgress, Grid, Typography } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
+import { useSelector } from 'react-redux';
+import { Navigate } from 'react-router-dom';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { FORM1_CAPABILITIES, hasForm1Capability } from '../../../utilities/form1Capabilities';
 import DocketHeaderInfo from './components/DocketHeaderInfo';
 import DocketTabBar from './components/DocketTabBar';
 import DriverRequestSection from './components/DriverRequestSection';
@@ -24,6 +27,10 @@ import useForm1New from './useForm1New';
  */
 const Form1205Form = () => {
   const { form, existingDocket, parties, loadingExisting } = useForm1New();
+  const userType = useSelector((state) => state.user.user_type);
+  const canEdit1205 = hasForm1Capability(userType, FORM1_CAPABILITIES.FORM1205_EDIT);
+  const canSubmit1205 = hasForm1Capability(userType, FORM1_CAPABILITIES.FORM1205_SUBMIT);
+  const canViewOtherTabs = hasForm1Capability(userType, FORM1_CAPABILITIES.OTHER_TABS_VIEW);
   const {
     formMethods,
     countyList,
@@ -46,7 +53,12 @@ const Form1205Form = () => {
     );
   }
 
+  if (!canViewOtherTabs) {
+    return <Navigate to={`/form1/reqdt/${existingDocket.form1Id}`} replace />;
+  }
+
   const isReviewLocked = existingDocket.actualStatus !== 'pending';
+  const fieldsDisabled = isReviewLocked || !canEdit1205;
 
   return (
     <Grid container>
@@ -69,13 +81,13 @@ const Form1205Form = () => {
                 countyListLoading={countyListLoading}
                 stateOptions={stateOptions}
                 today={today}
-                disabled={isReviewLocked}
+                disabled={fieldsDisabled}
               />
-              <DriverRequestSection disabled={isReviewLocked} />
+              <DriverRequestSection disabled={fieldsDisabled} />
               <OfficerInformationSection
                 control={formMethods.control}
                 stateOptions={stateOptions}
-                locked={isReviewLocked}
+                locked={fieldsDisabled}
               />
 
               <Grid container spacing={2} sx={{ mt: 4 }}>
@@ -88,7 +100,7 @@ const Form1205Form = () => {
                   <Button
                     color="secondary"
                     onClick={handleSave}
-                    disabled={saving || isReviewLocked}
+                    disabled={saving || fieldsDisabled}
                     startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
                     sx={{ minWidth: 180 }}
                   >
@@ -98,7 +110,7 @@ const Form1205Form = () => {
                 <Grid item xs={12} sm="auto">
                   <Button
                     onClick={handleSubmitForm}
-                    disabled={saving || isReviewLocked}
+                    disabled={saving || isReviewLocked || !canSubmit1205}
                     startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
                     sx={{ minWidth: 180 }}
                   >

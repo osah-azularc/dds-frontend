@@ -68,6 +68,14 @@ const appNav = [
     path: '/search-results',
     element: <SearchResultsPage />,
   },
+  {
+    // dds_superuser's docket click (a Docket Search result row with no form1Id -- see
+    // useSearchResultsState.js's handleRowClick) -- same Form1 component as
+    // /form1/reqdt/:form1Id, which detects the caseId param and loads the raw `docket`
+    // row instead (useForm1New.js/useSuperuserDocketData.js).
+    path: '/docket/reqdt/:caseId',
+    element: <Form1 />,
+  },
 ];
 
 const appRoutes = [

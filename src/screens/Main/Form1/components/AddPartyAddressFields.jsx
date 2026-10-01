@@ -27,10 +27,15 @@ export const AddressFields = ({
   showAltButton,
   showAltAddress,
   onToggleAlt,
+  disabled,
 }) => (
   <>
     <Grid item xs={12}>
-      <FormRadioField name="isInternationalAddr" label="Is this an international address?" />
+      <FormRadioField
+        name="isInternationalAddr"
+        label="Is this an international address?"
+        disabled={disabled}
+      />
     </Grid>
 
     {isInternational ? (
@@ -41,6 +46,7 @@ export const AddressFields = ({
           rules={INTERNATIONAL_ADDRESS_VALIDATION_REQUIRED}
           multiline
           minRows={4}
+          disabled={disabled}
         />
       </Grid>
     ) : (
@@ -50,13 +56,19 @@ export const AddressFields = ({
             name="address1"
             label="Address Line 1 *"
             rules={ADDRESS_LINE_1_VALIDATION_REQUIRED}
+            disabled={disabled}
           />
         </Grid>
         <Grid item xs={12}>
-          <FormTextField name="address2" label="Address Line 2" />
+          <FormTextField name="address2" label="Address Line 2" disabled={disabled} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FormTextField name="city" label="City *" rules={CITY_VALIDATION_REQUIRED} />
+          <FormTextField
+            name="city"
+            label="City *"
+            rules={CITY_VALIDATION_REQUIRED}
+            disabled={disabled}
+          />
         </Grid>
         <Grid item xs={12} sm={4}>
           <FormSelectField
@@ -64,6 +76,7 @@ export const AddressFields = ({
             label="State *"
             options={stateOptions}
             rules={STATE_VALIDATION_REQUIRED}
+            disabled={disabled}
           />
         </Grid>
         <Grid item xs={12} sm={4}>
@@ -74,6 +87,7 @@ export const AddressFields = ({
             formatter={formatZipCode}
             placeholder="XXXXX or XXXXX-XXXX"
             inputProps={{ maxLength: 10 }}
+            disabled={disabled}
           />
         </Grid>
       </>
@@ -81,7 +95,7 @@ export const AddressFields = ({
 
     {showAltButton && (
       <Grid item xs={12}>
-        <Button variant="outlined" onClick={onToggleAlt}>
+        <Button variant="outlined" onClick={onToggleAlt} disabled={disabled}>
           {showAltAddress ? 'Remove Additional Address' : 'Add Additional Address'}
         </Button>
       </Grid>
@@ -89,16 +103,21 @@ export const AddressFields = ({
     {showAltButton && showAltAddress && (
       <>
         <Grid item xs={12}>
-          <FormTextField name="altAddress1" label="Second Address Line 1" />
+          <FormTextField name="altAddress1" label="Second Address Line 1" disabled={disabled} />
         </Grid>
         <Grid item xs={12}>
-          <FormTextField name="altAddress2" label="Second Address Line 2" />
+          <FormTextField name="altAddress2" label="Second Address Line 2" disabled={disabled} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FormTextField name="altCity" label="Second City" />
+          <FormTextField name="altCity" label="Second City" disabled={disabled} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FormSelectField name="altState" label="Second State" options={stateOptions} />
+          <FormSelectField
+            name="altState"
+            label="Second State"
+            options={stateOptions}
+            disabled={disabled}
+          />
         </Grid>
         <Grid item xs={12} sm={4}>
           <FormTextField
@@ -107,6 +126,7 @@ export const AddressFields = ({
             formatter={formatZipCode}
             placeholder="XXXXX or XXXXX-XXXX"
             inputProps={{ maxLength: 10 }}
+            disabled={disabled}
           />
         </Grid>
       </>
@@ -120,4 +140,9 @@ AddressFields.propTypes = {
   showAltButton: PropTypes.bool.isRequired,
   showAltAddress: PropTypes.bool.isRequired,
   onToggleAlt: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+};
+
+AddressFields.defaultProps = {
+  disabled: false,
 };

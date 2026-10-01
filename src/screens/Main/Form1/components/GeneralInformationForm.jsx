@@ -78,7 +78,11 @@ const GeneralInformationForm = ({
   readOnly,
   updatingPermit,
   onUpdatePermit,
+  showPermitSave,
+  showTemporaryPermit,
 }) => {
+  const effectiveShowPermitSave = showPermitSave ?? readOnly;
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h2" color="secondary" sx={{ mb: 2 }}>
@@ -191,16 +195,18 @@ const GeneralInformationForm = ({
         )}
       </Grid>
 
-      <TemporaryPermitSection
-        form={form}
-        onFieldChange={onFieldChange}
-        onEligiblePermitChange={onEligiblePermitChange}
-        onEffectiveDateChange={onEffectiveDateChange}
-        today={today}
-        showSaveButton={readOnly}
-        saving={updatingPermit}
-        onSave={onUpdatePermit}
-      />
+      {showTemporaryPermit && (
+        <TemporaryPermitSection
+          form={form}
+          onFieldChange={onFieldChange}
+          onEligiblePermitChange={onEligiblePermitChange}
+          onEffectiveDateChange={onEffectiveDateChange}
+          today={today}
+          showSaveButton={effectiveShowPermitSave}
+          saving={updatingPermit}
+          onSave={onUpdatePermit}
+        />
+      )}
 
       {!readOnly && (
         <Grid container spacing={3} sx={{ mt: 1 }}>
@@ -252,12 +258,25 @@ GeneralInformationForm.propTypes = {
   readOnly: PropTypes.bool,
   updatingPermit: PropTypes.bool,
   onUpdatePermit: PropTypes.func,
+  // Whether the Temporary Permit section shows its own Save button. Defaults to `readOnly`
+  // (Form1.jsx's regular clerk existing-docket review, which still allows editing just this
+  // section) -- Form1.jsx passes false for dds_superuser's docket-detail view (reviewing a
+  // raw `docket` row there doesn't mean the viewer can update it; there's no endpoint for
+  // this at all on that path).
+  showPermitSave: PropTypes.bool,
+  // Whether the Temporary Permit section renders at all. There's no Temporary Permit
+  // workflow for dds_superuser's docket-detail view (a raw `docket` row has no permit
+  // eligibility data -- see useForm1New.js), so Form1.jsx passes false there instead of
+  // showing an always-blank, always-"No" section.
+  showTemporaryPermit: PropTypes.bool,
 };
 
 GeneralInformationForm.defaultProps = {
   readOnly: false,
   updatingPermit: false,
   onUpdatePermit: undefined,
+  showPermitSave: undefined,
+  showTemporaryPermit: true,
 };
 
 export default React.memo(GeneralInformationForm);

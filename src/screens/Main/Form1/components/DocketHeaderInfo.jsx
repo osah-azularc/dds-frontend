@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Grid, Typography } from '@mui/material';
-import { RESPONDENT_NAMES, formatDocketNumber } from '../constants';
+import { RESPONDENT_NAMES } from '../constants';
 
 const renderValue = (value) => value || '—';
 
@@ -9,16 +9,20 @@ const partyDisplayName = (party) =>
   [party?.lastName, party?.firstName].filter(Boolean).join(', ') || '—';
 
 /**
- * Docket overview strip (Docket Number/Petitioner/Respondent/Created By)
- * for the existing-docket review screen (/form1/reqdt/:form1Id). Matches
- * ecourt-frontend's DocketInformationMain.jsx layout/typography exactly
- * (caption labels, h2/secondary values) — no Download Docket button, since
- * DDS doesn't have that feature. "Created By" needs a resolved username the
- * current API doesn't return, so it stays a placeholder for now.
+ * Docket overview strip (Docket Number/Petitioner/Respondent/Created By) for the shared
+ * existing-docket review screen (/form1/reqdt/:form1Id for the regular DDS clerk flow,
+ * /docket/reqdt/:caseId for dds_superuser -- see Form1.jsx/useForm1New.js). Matches
+ * ecourt-frontend's DocketInformationMain.jsx layout/typography exactly (caption labels,
+ * h2/secondary values) — no Download Docket button, since DDS doesn't have that feature.
+ * "Created By" needs a resolved username the current API doesn't return, so it stays a
+ * placeholder for now.
  *
- * Docket Number isn't set until OSAH staff assign a judge to the docket
- * (see formatDocketNumber's comment in constants.js), so — matching
- * form1.phtml's `ng-show="docket_no"` on this same block — the whole strip
+ * `existingDocket.docketNumber` arrives already display-formatted -- useClerkDocketData.js
+ * applies constants.js's formatDocketNumber (legacy's storage-order reorder) once when
+ * loading, and useSuperuserDocketData.js's own already comes pre-formatted from the backend
+ * (searchDocketHelper.js's formatDisplayDocketNumber) -- so this component just displays it.
+ * Docket Number isn't set until OSAH staff assign a judge to the docket (clerk flow only),
+ * so — matching form1.phtml's `ng-show="docket_no"` on this same block — the whole strip
  * renders nothing until then, rather than showing a misleading "—".
  */
 const DocketHeaderInfo = ({ existingDocket, parties }) => {
@@ -26,7 +30,7 @@ const DocketHeaderInfo = ({ existingDocket, parties }) => {
     () => parties.find((party) => party.typeOfContact === 'Petitioner'),
     [parties],
   );
-  const docketNumber = formatDocketNumber(existingDocket.docketNumber);
+  const { docketNumber } = existingDocket;
   const respondentName = RESPONDENT_NAMES[existingDocket.refAgency] || existingDocket.refAgency;
 
   if (!docketNumber) return null;

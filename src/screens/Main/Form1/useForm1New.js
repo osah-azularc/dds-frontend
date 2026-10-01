@@ -13,9 +13,10 @@ import {
   showSuccessSnackbar,
   showWarningSnackbar,
 } from '../../../utilities/ErrorSnackBar';
-import { addDdsDocket, searchDocketInfo, updateDdsDocket } from '../../../services/form1Service';
-import { getForm1Parties } from '../../../services/form1PartyService';
+import { addDdsDocket, updateDdsDocket } from '../../../services/form1Service';
 import useForm1DocumentsAndDisposition from './useForm1DocumentsAndDisposition';
+import useClerkDocketData from './useClerkDocketData';
+import useSuperuserDocketData from './useSuperuserDocketData';
 import {
   AGENCY_CODE,
   CASE_TYPE,
@@ -29,31 +30,45 @@ const toDateString = (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '')
 const toDayjsOrNull = (value) => (value ? dayjs(value) : null);
 
 /**
- * Drives the "Enter New Form 1" screen — also reused, read-only, for
- * reviewing an existing docket at /form1/reqdt/:form1Id (reached by
- * clicking a row in Docket Search). Mirrors the legacy DDS portal's
- * form1-new-controller.js: County list is shared with the docket search
- * panel's dashboardFiltersSlice; Agency Code/Case Type/Hearing Type are
- * fixed (see constants.js); Permit Expiration Date auto-computes from
- * Permit Effective Date (+90 days).
+ * Drives the "Enter New Form 1" screen (create flow) -- also reused, read-only, for both
+ * existing-docket review entry points (appRoutes.jsx):
+ *   - /form1/reqdt/:form1Id -- regular DDS clerk/helpdesk flow (useClerkDocketData.js)
+ *   - /docket/reqdt/:caseId -- dds_superuser's docket click, which has no form1Id to look
+ *     up through that flow (useSuperuserDocketData.js) -- see useSearchResultsState.js's
+ *     handleRowClick
+ * Only one of form1Id/caseId is ever set, matching whichever route rendered this screen;
+ * `isSuperuserView` picks which of the two data hooks below is "live" for this render.
+ * Mirrors the legacy DDS portal's form1-new-controller.js: County list is shared with the
+ * docket search panel's dashboardFiltersSlice; Agency Code/Case Type/Hearing Type are fixed
+ * (see constants.js); Permit Expiration Date auto-computes from Permit Effective Date
+ * (+90 days).
  */
 const useForm1New = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { form1Id } = useParams();
-  const isExisting = Boolean(form1Id);
+  const { form1Id, caseId } = useParams();
+  const isSuperuserView = Boolean(caseId);
+  const isExisting = Boolean(form1Id) || isSuperuserView;
   const countyList = useSelector(selectCountyList);
   const countyListInitialized = useSelector(selectDashboardFilterInitialized);
   const countyListLoading = useSelector(selectDashboardFilterLoading);
 
   const [form, setForm] = useState(INITIAL_FORM1_FORM);
   const [saving, setSaving] = useState(false);
-  const [existingDocket, setExistingDocket] = useState(null);
-  const [parties, setParties] = useState([]);
-  const [permitInfo, setPermitInfo] = useState(null);
-  const [loadingExisting, setLoadingExisting] = useState(isExisting);
   const [updatingPermit, setUpdatingPermit] = useState(false);
-  const { documents, disposition } = useForm1DocumentsAndDisposition(form1Id, isExisting);
+
+  const clerkData = useClerkDocketData(form1Id);
+  const superuserData = useSuperuserDocketData(caseId, isSuperuserView);
+  const { documents: clerkDocuments, disposition: clerkDisposition } =
+    useForm1DocumentsAndDisposition(form1Id, isExisting && !isSuperuserView);
+
+  // Whichever source matches this route.
+  const existingDocket = isSuperuserView ? superuserData.existingDocket : clerkData.existingDocket;
+  const parties = isSuperuserView ? superuserData.parties : clerkData.parties;
+  const disposition = isSuperuserView ? superuserData.disposition : clerkDisposition;
+  const documents = isSuperuserView ? superuserData.documents : clerkDocuments;
+  const loadingExisting = isSuperuserView ? superuserData.loading : clerkData.loadingExisting;
+  const permitInfo = isSuperuserView ? null : clerkData.permitInfo;
 
   // `attemptedFilterLoad` gates this to one dispatch per mount. Without it,
   // a failed loadDashboardFilters() (e.g. an expired session) flips
@@ -78,49 +93,10 @@ const useForm1New = () => {
     }
   }, [isExisting, countyList, form.county]);
 
-  // Load an existing docket's data (Docket Search -> Form 1 review flow).
-  // DOB/Incident Date/Eligibility/Effective/Expiry Date come from
-  // form1_dds_1205_offence and form1_dds_permit_eligibility_effectivedate
-  // (permitData). Re-run after a successful Temporary Permit save
-  // (handleUpdatePermit below) so the form reflects what's actually
-  // persisted, not just what was submitted. Party rows are fetched
-  // separately via loadParties() below (dds-form1/get-party-details),
-  // matching legacy's own separate getPartyDetailsAction() rather than
-  // bundling them into this response.
-  const loadExistingDocket = useCallback(async () => {
-    const response = await searchDocketInfo(form1Id);
-
-    if (response === '404' || !response?.docketData?.length) {
-      showErrorSnackbar('Docket not found');
-      navigate('/home', { replace: true });
-      return;
-    }
-
-    setExistingDocket(response.docketData[0]);
-    setPermitInfo(response.permitData?.[0] || null);
-    setLoadingExisting(false);
-  }, [form1Id, navigate]);
-
-  const loadParties = useCallback(async () => {
-    const data = await getForm1Parties(form1Id);
-    setParties(data);
-  }, [form1Id]);
-
-  useEffect(() => {
-    if (!isExisting) return;
-    loadExistingDocket();
-    loadParties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExisting, form1Id]);
-
-  // Add Party writes a Petitioner's License Number to the docket's own Agency Reference
-  // Number (see ddsForm1PartyService.js), so a party add/edit/delete refreshes both the
-  // docket and the party list, not just the list.
-  const refetchAfterPartyChange = useCallback(async () => {
-    await Promise.all([loadExistingDocket(), loadParties()]);
-  }, [loadExistingDocket, loadParties]);
-
-  // Once the docket and county list have both loaded, populate the form.
+  // Once the docket and county list have both loaded, populate the form. permitInfo
+  // (Temporary Permit eligibility) has no equivalent for a superuser's raw `docket`-table
+  // view, so it just stays unanswered there (showPermitSave is also false for that view —
+  // see Form1.jsx).
   useEffect(() => {
     if (!existingDocket || countyList.length === 0) return;
     const matchedCounty =
@@ -174,6 +150,8 @@ const useForm1New = () => {
   // Saves the Temporary Permit section on the existing-docket review
   // screen (dds-form1/updatedocket) — separate from handleSave, which
   // posts the "Enter New Form 1" creation flow to dds-form1/adddocket.
+  // Only reachable from the clerk flow -- GeneralInformationForm's showPermitSave is
+  // false for the superuser view (Form1.jsx), which has no update endpoint for this at all.
   const handleUpdatePermit = useCallback(async () => {
     if (form.eligiblePermit === '1') {
       if (!form.permitEffectiveDate) {
@@ -202,7 +180,7 @@ const useForm1New = () => {
       });
 
       showSuccessSnackbar('Temporary Permit updated successfully!');
-      await loadExistingDocket();
+      await clerkData.loadExistingDocket();
     } catch (error) {
       showErrorSnackbar(
         error.response?.data?.error || 'Something went wrong! Please try again later.',
@@ -210,7 +188,7 @@ const useForm1New = () => {
     } finally {
       setUpdatingPermit(false);
     }
-  }, [form, form1Id, loadExistingDocket]);
+  }, [form, form1Id, clerkData]);
 
   const resetForm = useCallback(() => {
     setForm({
@@ -282,6 +260,8 @@ const useForm1New = () => {
     handleEffectiveDateChange,
     handleSave,
     isExisting,
+    isSuperuserView,
+    caseId,
     existingDocket,
     parties,
     disposition,
@@ -289,7 +269,7 @@ const useForm1New = () => {
     loadingExisting,
     updatingPermit,
     handleUpdatePermit,
-    refetchAfterPartyChange,
+    refetchAfterPartyChange: clerkData.refetchAfterPartyChange,
   };
 };
 

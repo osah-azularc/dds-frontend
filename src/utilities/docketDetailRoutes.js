@@ -7,12 +7,18 @@
  * `isFormDetail = pathname.startsWith('/form1/reqdt')` check, which only ever matched the
  * General Information route (the other three insert a segment between `/form1/` and
  * `reqdt/`), silently hiding the header on Form 1205/History/Notes.
+ *
+ * `/docket/reqdt/` is dds_superuser's docket click (same Form1.jsx as the routes above,
+ * reached from a Docket Search result row that has no form1Id -- see Form1.jsx/
+ * useForm1New.js) -- included here so the same header shell (and Header.jsx's force-open
+ * Additional Search Options for that usertype) shows on it too.
  */
 const DOCKET_DETAIL_PATH_PREFIXES = [
   '/form1/reqdt/',
   '/form1/1205form/reqdt/',
   '/form1/history/reqdt/',
   '/form1/notes/reqdt/',
+  '/docket/reqdt/',
 ];
 
 export const isDocketDetailRoute = (pathname) =>

@@ -35,7 +35,7 @@ const mapNoteRow = (row) => ({
  * form1-notes.phtml's disableAddEditNote gate; Edit/Delete stay available
  * regardless, since this screen has no read-only "review" mode of its own.
  */
-const NotesTable = ({ form1Id, canAddEdit }) => {
+const NotesTable = ({ form1Id, canAddEdit, canManage }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -146,6 +146,7 @@ const NotesTable = ({ form1Id, canAddEdit }) => {
   const columns = NotesTabColumns({
     onEditNoteOpen: handleEditOpen,
     onDeleteNoteOpen: setNoteToDelete,
+    canManage,
   });
 
   return (
@@ -207,8 +208,9 @@ const NotesTable = ({ form1Id, canAddEdit }) => {
 NotesTable.propTypes = {
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   canAddEdit: PropTypes.bool,
+  canManage: PropTypes.bool,
 };
 
-NotesTable.defaultProps = { canAddEdit: true };
+NotesTable.defaultProps = { canAddEdit: true, canManage: true };
 
 export default React.memo(NotesTable);

@@ -1,22 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import useDashboard from './useDashboard';
+import { useConfirmDialog } from './useConfirmDialog';
+import { useSearchResultsDownload } from './useSearchResultsDownload';
 import { showErrorSnackbar } from '../utilities/ErrorSnackBar';
-import { buildSearchPayload } from '../screens/Main/Home/utils/searchResultsUtils';
+import {
+  buildSearchPayload,
+  transformSearchResults,
+} from '../screens/Main/Home/utils/searchResultsUtils';
 
 const DEFAULT_PAGE_SIZE = 50;
 
 /**
- * Docket Search results state: pagination, sorting, and fetching.
- * Filters arrive via router state from AdditionalSearchOptions's Search
- * button. Ported (and trimmed of eCourt's bulk-edit/bulk-designation/NOH
- * machinery, which DDS's search results screen doesn't have) from
- * ecourt-frontend's hooks/useSearchResultsState.js.
+ * Docket Search results state: pagination, sorting, fetching, row selection,
+ * and the Download Files/Export actions. Filters arrive via router state
+ * from AdditionalSearchOptions's Search button. Ported (and trimmed of
+ * eCourt's bulk-edit/bulk-designation/NOH machinery, which DDS's search
+ * results screen doesn't have) from ecourt-frontend's
+ * hooks/useSearchResultsState.js.
  */
 export function useSearchResultsState() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { generalSearch } = useDashboard();
+  const { generalSearch, superuserSearch } = useDashboard();
+  const { ConfirmDialog, showConfirmDialog } = useConfirmDialog();
+  const isSuperuser = useSelector((state) => state.user.user_type) === 'dds_superuser';
 
   const filters = location.state?.filters;
   const [page, setPage] = useState(0);
@@ -26,13 +35,16 @@ export function useSearchResultsState() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  const rows = useMemo(() => transformSearchResults(searchResults), [searchResults]);
 
   const fetchSearchResults = useCallback(
     async (currentPage, currentPageSize, currentSortModel) => {
       setLoading(true);
       try {
         const payload = buildSearchPayload(filters, currentPage, currentPageSize, currentSortModel);
-        const response = await generalSearch(payload);
+        const response = await (isSuperuser ? superuserSearch(payload) : generalSearch(payload));
         if (response?.success === false) {
           setSearchResults([]);
           setTotalRecords(0);
@@ -46,7 +58,7 @@ export function useSearchResultsState() {
         setLoading(false);
       }
     },
-    [filters, generalSearch],
+    [filters, isSuperuser, generalSearch, superuserSearch],
   );
 
   useEffect(() => {
@@ -70,18 +82,49 @@ export function useSearchResultsState() {
     setPage(0);
   }, []);
 
-  const handleBackToSearch = useCallback(() => navigate('/home'), [navigate]);
+  // Docket cell / row click. Regular DDS search rows (form1_docket) already carry form1Id and
+  // go to /form1/reqdt/:form1Id; dds_superuser rows (the broader `docket` table, see
+  // useDashboard.js's superuserSearch) don't have one, so they go to /docket/reqdt/:caseId
+  // instead -- the same Form1.jsx, which detects the caseId param and looks the case up
+  // directly instead (see useForm1New.js/useSuperuserDocketData.js).
+  const handleRowClick = useCallback(
+    (row) => {
+      if (row.form1Id) {
+        navigate(`/form1/reqdt/${row.form1Id}`);
+        return;
+      }
+      if (!row.docket || row.docket === '...') return;
+
+      navigate(`/docket/reqdt/${row.docket}`);
+    },
+    [navigate],
+  );
+
+  const downloadHandlers = useSearchResultsDownload({
+    rows,
+    totalRecords,
+    currentFilters: filters,
+    sortModel,
+    selectedRows,
+    setSelectedRows,
+    showConfirmDialog,
+  });
 
   return {
     page,
     pageSize,
     sortModel,
+    rows,
     searchResults,
     totalRecords,
     loading,
     isInitialLoad,
+    selectedRows,
+    setSelectedRows,
     handlePaginationModelChange,
     handleSortModelChange,
-    handleBackToSearch,
+    handleRowClick,
+    ConfirmDialog,
+    ...downloadHandlers,
   };
 }

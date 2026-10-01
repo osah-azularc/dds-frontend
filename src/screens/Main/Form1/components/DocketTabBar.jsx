@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Tab, Tabs, Tooltip, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import HistoryIcon from '@mui/icons-material/History';
@@ -10,7 +11,18 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DeleteDialogue from '../../../../components/common/DeleteDialogue';
 import { deleteDdsDocket } from '../../../../services/form1Service';
+import { downloadCaseFilesZip } from '../../../../services/searchResultsService';
 import { showErrorSnackbar, showSuccessSnackbar } from '../../../../utilities/ErrorSnackBar';
+import { FORM1_CAPABILITIES, hasForm1Capability } from '../../../../utilities/form1Capabilities';
+import { useConfirmDialog } from '../../../../hooks/useConfirmDialog';
+
+const DOWNLOAD_BUTTON_SX = {
+  backgroundColor: '#D4A500',
+  color: '#fff',
+  textTransform: 'none',
+  fontWeight: 600,
+  '&:hover': { backgroundColor: '#C49500' },
+};
 
 // Matches ecourt-frontend's DocketInformationStyle.js TabListContainer —
 // the colored case-tab bar (background/white tab text/indicator) shared by
@@ -71,11 +83,39 @@ const NO_PETITIONER_TOOLTIP = 'To access this page, please add a petitioner.';
  * "Are you sure you would like to delete this docket?") and, on success,
  * navigates back to Home the same way legacy's deleteDocket() does
  * ($state.go('home')).
+ *
+ * Form 1205/History/Notes are hidden entirely (not just disabled) for
+ * dds_superuser (OTHER_TABS_VIEW, utilities/form1Capabilities.js) -- that
+ * usertype only ever gets General Information here, matching its narrower
+ * oversight role in legacy rather than clerk/helpdesk's full per-docket
+ * data-entry tab set.
+ *
+ * `isSuperuserView` replaces the "{status} by OSAH" text with a "Download File" button
+ * instead -- legacy's own superuser docket screen (sudocketcontroller.js's
+ * DocketFactory.singlefiledownload, sudocket.phtml) has this single-docket download in
+ * that same slot, which the regular clerk existing-docket review (form1.phtml) doesn't
+ * have at all. Reuses the same zip-download service and "Attention: Files over 250 MB
+ * will not be downloaded" confirmation as the Docket Search results page's own Download
+ * Case Files action (searchResultsService.js/useConfirmDialog.jsx) -- always downloads
+ * 'case-files' for this one caseId, matching legacy's flag:1 (no case-files/decisions
+ * choice for a single docket).
  */
-const DocketTabBar = ({ status, actualStatus, form1Id, activeTab, hasPetitioner }) => {
+const DocketTabBar = ({
+  status,
+  actualStatus,
+  form1Id,
+  activeTab,
+  hasPetitioner,
+  isSuperuserView,
+  caseId,
+}) => {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const userType = useSelector((state) => state.user.user_type);
+  const canViewOtherTabs = hasForm1Capability(userType, FORM1_CAPABILITIES.OTHER_TABS_VIEW);
+  const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
 
   const handleDeleteConfirm = async () => {
     setDeleting(true);
@@ -92,6 +132,26 @@ const DocketTabBar = ({ status, actualStatus, form1Id, activeTab, hasPetitioner 
     }
   };
 
+  const runDownload = async () => {
+    try {
+      setDownloading(true);
+      await downloadCaseFilesZip([caseId], 'case-files');
+      showSuccessSnackbar('Download completed successfully!');
+    } catch (error) {
+      showErrorSnackbar(error.message || 'Error downloading files. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadClick = () => {
+    showConfirmDialog(
+      'Download File',
+      'Attention: Files over 250 MB will not be downloaded',
+      runDownload,
+    );
+  };
+
   return (
     <Box sx={TAB_BAR_SX}>
       <Tabs value={TAB_INDEX[activeTab]} sx={{ minWidth: 0, flex: '1 1 auto', maxWidth: '100%' }}>
@@ -99,39 +159,47 @@ const DocketTabBar = ({ status, actualStatus, form1Id, activeTab, hasPetitioner 
           icon={<InfoOutlinedIcon fontSize="small" />}
           iconPosition="start"
           label="General Information"
-          onClick={() => navigate(TAB_ROUTES.general(form1Id))}
+          // dds_superuser's docket-detail view (/docket/reqdt/:caseId) has no form1Id -- this
+          // is already its own General Information-equivalent (and only) tab, so clicking it
+          // is a no-op rather than navigating to /form1/reqdt/undefined.
+          onClick={() => form1Id && navigate(TAB_ROUTES.general(form1Id))}
         />
-        {hasPetitioner ? (
+        {canViewOtherTabs &&
+          (hasPetitioner ? (
+            <Tab
+              icon={<DescriptionOutlinedIcon fontSize="small" />}
+              iconPosition="start"
+              label="Form 1205"
+              onClick={() => navigate(TAB_ROUTES.form1205(form1Id))}
+            />
+          ) : (
+            <Tooltip title={NO_PETITIONER_TOOLTIP}>
+              <span>
+                <Tab
+                  icon={<DescriptionOutlinedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="Form 1205"
+                  disabled
+                />
+              </span>
+            </Tooltip>
+          ))}
+        {canViewOtherTabs && (
           <Tab
-            icon={<DescriptionOutlinedIcon fontSize="small" />}
+            icon={<HistoryIcon fontSize="small" />}
             iconPosition="start"
-            label="Form 1205"
-            onClick={() => navigate(TAB_ROUTES.form1205(form1Id))}
+            label="History"
+            onClick={() => navigate(TAB_ROUTES.history(form1Id))}
           />
-        ) : (
-          <Tooltip title={NO_PETITIONER_TOOLTIP}>
-            <span>
-              <Tab
-                icon={<DescriptionOutlinedIcon fontSize="small" />}
-                iconPosition="start"
-                label="Form 1205"
-                disabled
-              />
-            </span>
-          </Tooltip>
         )}
-        <Tab
-          icon={<HistoryIcon fontSize="small" />}
-          iconPosition="start"
-          label="History"
-          onClick={() => navigate(TAB_ROUTES.history(form1Id))}
-        />
-        <Tab
-          icon={<EditNoteIcon fontSize="small" />}
-          iconPosition="start"
-          label="Notes"
-          onClick={() => navigate(TAB_ROUTES.notes(form1Id))}
-        />
+        {canViewOtherTabs && (
+          <Tab
+            icon={<EditNoteIcon fontSize="small" />}
+            iconPosition="start"
+            label="Notes"
+            onClick={() => navigate(TAB_ROUTES.notes(form1Id))}
+          />
+        )}
       </Tabs>
       {activeTab === 'general' && actualStatus === 'pending' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -153,11 +221,28 @@ const DocketTabBar = ({ status, actualStatus, form1Id, activeTab, hasPetitioner 
           </Button>
         </Box>
       )}
-      {!(activeTab === 'general' && actualStatus === 'pending') && status && status !== 'Draft' && (
-        <Typography variant="body1" sx={{ color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}>
-          {status} by OSAH
-        </Typography>
-      )}
+      {!(activeTab === 'general' && actualStatus === 'pending') &&
+        (isSuperuserView ? (
+          <Button
+            variant="contained"
+            onClick={handleDownloadClick}
+            disabled={downloading}
+            startIcon={downloading ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={DOWNLOAD_BUTTON_SX}
+          >
+            {downloading ? 'Downloading…' : 'Download File'}
+          </Button>
+        ) : (
+          status &&
+          status !== 'Draft' && (
+            <Typography
+              variant="body1"
+              sx={{ color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}
+            >
+              {status} by OSAH
+            </Typography>
+          )
+        ))}
 
       {activeTab === 'general' && (
         <DeleteDialogue
@@ -169,6 +254,7 @@ const DocketTabBar = ({ status, actualStatus, form1Id, activeTab, hasPetitioner 
           confirmText={deleting ? 'Deleting…' : 'Delete'}
         />
       )}
+      {isSuperuserView && <ConfirmDialog />}
     </Box>
   );
 };
@@ -179,6 +265,11 @@ DocketTabBar.propTypes = {
   form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   activeTab: PropTypes.oneOf(['general', 'form1205', 'history', 'notes']),
   hasPetitioner: PropTypes.bool,
+  // dds_superuser's docket-detail view (/docket/reqdt/:caseId) -- see Form1.jsx. Swaps the
+  // "{status} by OSAH" text for a "Download File" button, which downloads this `caseId`'s
+  // case files (legacy: DocketFactory.singlefiledownload).
+  isSuperuserView: PropTypes.bool,
+  caseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 DocketTabBar.defaultProps = {
@@ -187,6 +278,8 @@ DocketTabBar.defaultProps = {
   actualStatus: '',
   activeTab: 'general',
   form1Id: undefined,
+  isSuperuserView: false,
+  caseId: undefined,
 };
 
 export default React.memo(DocketTabBar);

@@ -7,11 +7,10 @@ import { Box, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useLocation } from 'react-router-dom'; // Use React Router's useLocation instead
 import DrawerNav from '../DrawerNav/DrawerNav';
 import FooterStrip from '../FooterStrip/FooterStrip';
 import style from './AppLayoutStyle';
-import { isDocketDetailRoute } from '../../utilities/docketDetailRoutes';
+import { useShowDocketSearch } from '../../hooks/useShowDocketSearch';
 
 const AppLayout = ({ children }) => {
   const theme = useTheme();
@@ -21,14 +20,15 @@ const AppLayout = ({ children }) => {
   // xs = < 600 px (logo gets extra 10 px top/bottom padding → header ≈ 116 px)
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [openNav, setOpenNav] = React.useState(!isMobile);
-  const location = useLocation(); // Get current location
-  const isHome = location.pathname === '/home'; // Check if it's the home page
-  const isSearchResults = location.pathname.startsWith('/search-results'); // Check if it's the search results page
-  const isFormDetail = isDocketDetailRoute(location.pathname); // Any of the 4 docket-detail tabs
 
-  // Pages with DocketSearch component don't need extra padding -- isFormDetail now shares
-  // Header.jsx's own route list (docketDetailRoutes.js) instead of duplicating it.
-  const hasDocketSearch = isHome || isSearchResults || isFormDetail;
+  // Pages with DocketSearch don't need extra padding -- its own hero-banner height is what
+  // pushes content below the fixed-position AppBar (MUI's AppBar default) there instead.
+  // Shared with Header.jsx (which actually renders DocketSearch) via one hook rather than
+  // two independently-maintained copies of "which routes have it" -- that duplication
+  // previously let this go stale (still assuming dds_superuser's docket-detail view had
+  // DocketSearch after Header.jsx was changed to skip it for that usertype, leaving this
+  // page's own content rendered underneath the fixed header with no padding to clear it).
+  const { showDocketSearch: hasDocketSearch } = useShowDocketSearch();
 
   // Exact header heights based on logo (253×80 px) + measured padding:
   //   ≥1321px (desktop)  : nav links row, no outer padding      → ~92 px

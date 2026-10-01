@@ -40,6 +40,18 @@ import { ContactMethodFields, TypeSpecificFields } from './AddPartyFormSections'
  * Also doubles as the Edit Party dialog (isEditMode/editData), matching
  * ecourt-frontend's own AddPartiesComponent.jsx reuse pattern -- one dialog
  * for both, since the field set is identical.
+ *
+ * `readOnly` (see DocumentPartyPanel.jsx's canCreateParty/canEditParty) opens
+ * the dialog view-only for a usertype without create/edit capability
+ * (dds_helpdesk) -- every field disabled and Save removed, but still
+ * openable to look at a party's data, matching legacy's own
+ * "Add-Party modal fields always disabled" rule for that usertype
+ * (form1.phtml:1124 etc.) without also hiding the Edit icon that opens it.
+ *
+ * `form1Id` is only actually used on Save (useAddPartyForm.js), so it's
+ * optional here -- dds_superuser's docket-detail view (DocumentPartyPanel.jsx's
+ * `viewOnly`) opens this same dialog without one, since `readOnly` already
+ * guarantees Save is never reachable.
  */
 const AddPartyModal = ({
   open,
@@ -49,6 +61,7 @@ const AddPartyModal = ({
   editData,
   isEditMode,
   onSaved,
+  readOnly,
 }) => {
   const {
     formMethods,
@@ -78,7 +91,10 @@ const AddPartyModal = ({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        <Typography variant="h2">{isEditMode ? 'Edit Party' : 'Add Party'}</Typography>
+        <Typography variant="h2">
+          {isEditMode ? 'Edit Party' : 'Add Party'}
+          {readOnly && ' (View Only)'}
+        </Typography>
       </DialogTitle>
       <DialogContent>
         <FormProvider {...formMethods}>
@@ -89,6 +105,7 @@ const AddPartyModal = ({
                 label="Contact Type *"
                 options={CONTACT_TYPE_OPTIONS}
                 rules={CONTACT_TYPE_VALIDATION_REQUIRED}
+                disabled={readOnly}
               />
             </Grid>
 
@@ -99,6 +116,7 @@ const AddPartyModal = ({
                     rules={LAST_NAME_VALIDATION_REQUIRED}
                     suggestions={nameSuggestions}
                     onSelectSuggestion={handleSelectSuggestion}
+                    disabled={readOnly}
                   />
                   {suggestionsLoading && (
                     <Typography variant="caption" color="text.secondary">
@@ -111,6 +129,7 @@ const AddPartyModal = ({
                   name="lastName"
                   label="Last Name *"
                   rules={LAST_NAME_VALIDATION_REQUIRED}
+                  disabled={readOnly}
                 />
               )}
             </Grid>
@@ -119,13 +138,18 @@ const AddPartyModal = ({
                 name="firstName"
                 label="First Name *"
                 rules={FIRST_NAME_VALIDATION_REQUIRED}
+                disabled={readOnly}
               />
             </Grid>
             <Grid item xs={12} sm={3}>
-              <FormTextField name="middleName" label="Middle Name" />
+              <FormTextField name="middleName" label="Middle Name" disabled={readOnly} />
             </Grid>
 
-            <TypeSpecificFields isPetitioner={isPetitioner} isAttorney={isAttorney} />
+            <TypeSpecificFields
+              isPetitioner={isPetitioner}
+              isAttorney={isAttorney}
+              disabled={readOnly}
+            />
 
             <AddressFields
               isInternational={isInternational}
@@ -133,9 +157,10 @@ const AddPartyModal = ({
               showAltButton={isPetitioner}
               showAltAddress={showAltAddress}
               onToggleAlt={toggleAltAddress}
+              disabled={readOnly}
             />
 
-            <ContactMethodFields />
+            <ContactMethodFields disabled={readOnly} />
 
             <Grid item xs={12}>
               <Typography variant="caption" color="text.secondary">
@@ -147,21 +172,23 @@ const AddPartyModal = ({
       </DialogContent>
       <DialogActions>
         <Grid container spacing={2} justifyContent="center" sx={{ pb: 2 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={readOnly ? 6 : 4}>
             <Button fullWidth color="secondary" onClick={onClose} disabled={saving}>
-              Cancel
+              {readOnly ? 'Close' : 'Cancel'}
             </Button>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Button
-              fullWidth
-              onClick={handleSave}
-              disabled={saving}
-              startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
-            >
-              {saving ? 'Saving…' : saveLabel}
-            </Button>
-          </Grid>
+          {!readOnly && (
+            <Grid item xs={12} sm={4}>
+              <Button
+                fullWidth
+                onClick={handleSave}
+                disabled={saving}
+                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
+              >
+                {saving ? 'Saving…' : saveLabel}
+              </Button>
+            </Grid>
+          )}
         </Grid>
       </DialogActions>
     </Dialog>
@@ -171,18 +198,21 @@ const AddPartyModal = ({
 AddPartyModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  form1Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   licenseNumberDefault: PropTypes.string,
   editData: PropTypes.object,
   isEditMode: PropTypes.bool,
   onSaved: PropTypes.func,
+  readOnly: PropTypes.bool,
 };
 
 AddPartyModal.defaultProps = {
+  form1Id: undefined,
   licenseNumberDefault: '',
   editData: null,
   isEditMode: false,
   onSaved: undefined,
+  readOnly: false,
 };
 
 export default React.memo(AddPartyModal);
