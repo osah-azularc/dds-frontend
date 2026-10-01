@@ -33,6 +33,7 @@ const TemporaryPermitSection = ({
   showSaveButton,
   saving,
   onSave,
+  errors,
 }) => {
   const isEligible = form.eligiblePermit === '1';
 
@@ -68,6 +69,8 @@ const TemporaryPermitSection = ({
                 label="Permit Effective Date *"
                 value={form.permitEffectiveDate}
                 onChange={onEffectiveDateChange}
+                error={Boolean(errors.permitEffectiveDate)}
+                helperText={errors.permitEffectiveDate}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -83,6 +86,8 @@ const TemporaryPermitSection = ({
                 value={form.dob}
                 onChange={(value) => onFieldChange({ dob: value })}
                 maxDate={today()}
+                error={Boolean(errors.dob)}
+                helperText={errors.dob}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -90,7 +95,8 @@ const TemporaryPermitSection = ({
                 label="Incident Date *"
                 value={form.incidentDate}
                 onChange={(value) => onFieldChange({ incidentDate: value })}
-                maxDate={today()}
+                error={Boolean(errors.incidentDate)}
+                helperText={errors.incidentDate}
               />
             </Grid>
           </>
@@ -132,12 +138,21 @@ TemporaryPermitSection.propTypes = {
   showSaveButton: PropTypes.bool,
   saving: PropTypes.bool,
   onSave: PropTypes.func,
+  // Inline validation errors (keyed by permitEffectiveDate/dob/incidentDate) -- rendered as
+  // each field's own error/helperText instead of a warning snackbar, see useForm1New.js's
+  // validatePermitFields.
+  errors: PropTypes.shape({
+    permitEffectiveDate: PropTypes.string,
+    dob: PropTypes.string,
+    incidentDate: PropTypes.string,
+  }),
 };
 
 TemporaryPermitSection.defaultProps = {
   showSaveButton: false,
   saving: false,
   onSave: undefined,
+  errors: {},
 };
 
 export default React.memo(TemporaryPermitSection);

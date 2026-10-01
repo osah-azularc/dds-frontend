@@ -53,7 +53,10 @@ const AddNotesSummaryModal = ({ open, onClose, onSave, initialValue, isEditMode,
         </Typography>
       </DialogTitle>
       <DialogContent>
-        <Grid container spacing={2}>
+        {/* mt: Grid's own negative top margin (from spacing) otherwise leaves no room above
+            Notes/Summary's floating label, clipping it against DialogTitle -- same fix as
+            AddPartyModal.jsx's Contact Type field. */}
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12}>
             <TextField
               label="Notes/Summary"

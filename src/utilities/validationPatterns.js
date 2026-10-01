@@ -28,6 +28,13 @@ export const ZIP_CODE_VALIDATION_REQUIRED = {
   pattern: { value: VALIDATION_PATTERNS.ZIP_CODE, message: 'Invalid zip code format' },
 };
 
+// Format-only, no `required` -- for optional zip fields (e.g. the Second/Alternate Address's
+// own zip), so an invalid format still gets caught inline instead of only by the backend's
+// own pattern check (ddsForm1PartyValidators.js's altZipCode).
+export const ZIP_CODE_VALIDATION = {
+  pattern: { value: VALIDATION_PATTERNS.ZIP_CODE, message: 'Invalid zip code format' },
+};
+
 export const CONTACT_TYPE_VALIDATION_REQUIRED = { required: 'Contact Type is required' };
 export const LAST_NAME_VALIDATION_REQUIRED = { required: 'Last Name is required' };
 export const FIRST_NAME_VALIDATION_REQUIRED = { required: 'First Name is required' };

@@ -23,21 +23,26 @@ import {
   formatIncidentTime,
   mapSearchResultToFormValues,
 } from './form1205FieldMappers';
+import { findMissingRequiredFields } from './form1205SubmitValidation';
 
 const today = () => dayjs();
 
 /**
- * Drives the Form 1205 screen. Save For Later/Submit both run the same
- * validation legacy's update1205() does (see form1205ValidationRules.js;
- * required rules are dropped while Officer Information is disabled --
- * "locked, already-saved data" should never block a save, matching
- * legacy's own required fields all sharing the same ng-disabled), then save
- * Officer Information + Incident Information + attach the standard
- * Respondent Attorney (see ddsForm1205Service.js); Submit additionally
- * marks the docket sent to DPS. Uses react-hook-form (matching
- * AddPartyModal.jsx's pattern) rather than this Form1 folder's older plain-
- * useState screens, specifically so every field gets the same inline-error
- * treatment.
+ * Drives the Form 1205 screen. Saves Officer Information + Incident Information + attaches
+ * the standard Respondent Attorney (see ddsForm1205Service.js); Submit additionally marks the
+ * docket sent to DPS. Uses react-hook-form (matching AddPartyModal.jsx's pattern) rather than
+ * this Form1 folder's older plain-useState screens, specifically so every field gets the same
+ * inline-error treatment.
+ *
+ * Save For Later and Submit intentionally do NOT share the same validation, unlike legacy's own
+ * update1205() (required-field check identical for both, differing only in the buttonStatus it
+ * then sends) -- Save For Later only runs each field's own *format* rule (whatever `rules` is
+ * still registered, e.g. Zip/Email's pattern), so an incomplete-but-not-malformed draft can
+ * actually be saved. Submit additionally runs findMissingRequiredFields() and blocks (via
+ * `setError`, same inline per-field message) until every legacy-required field has a value.
+ * `onSubmitted` (Form1205Form.jsx's own refetchAfterPartyChange) re-fetches the docket once a
+ * Submit succeeds, so Save For Later/Submit stop being clickable immediately instead of only
+ * after the docket's new actualStatus got fetched some other way (e.g. leaving and returning).
  *
  * `prefill` binds whatever's already available on the General Information
  * section into the matching Incident Information fields the *first* time
@@ -49,7 +54,7 @@ const today = () => dayjs();
  * that's still empty afterward, so a docket that already has its own saved
  * 1205 data never gets clobbered by this generic fallback.
  */
-const useForm1205Form = ({ form1Id, prefill }) => {
+const useForm1205Form = ({ form1Id, prefill, locked, onSubmitted }) => {
   const dispatch = useDispatch();
   const countyList = useSelector(selectCountyList);
   const countyListInitialized = useSelector(selectDashboardFilterInitialized);
@@ -172,6 +177,11 @@ const useForm1205Form = ({ form1Id, prefill }) => {
   // own frontend makes on both Save For Later and Submit (Submit additionally calls
   // updateDdsToDps below). Officer Information is saved first so its party_id is available to
   // link the Incident Information row to it (officerId), matching legacy's own officerrid.
+  // officerDetails carries its own `buttonStatus` too (not just incidentDetails) -- the backend
+  // only ever enforces Officer Information's own required set (Last/First Name/Georgia State
+  // Patrol/Precinct/City/State/Zip) when it's 'submit' (ddsForm1205Validators.js), since this
+  // request is otherwise a completely separate round trip with no visibility into what the
+  // Incident Information request is about to send.
   const saveForm1205 = useCallback(
     async (values, buttonStatus) => {
       const officerDetails = {
@@ -188,6 +198,7 @@ const useForm1205Form = ({ form1Id, prefill }) => {
         email: values.email,
         fax: values.fax,
         badgeNo: values.officerBadgeNumber,
+        buttonStatus,
         ...(officerPartyIdRef.current != null ? { partyId: officerPartyIdRef.current } : {}),
       };
 
@@ -213,6 +224,7 @@ const useForm1205Form = ({ form1Id, prefill }) => {
         inches: values.inches,
         weight: values.weight,
         driverRequest: values.driverRequest,
+        isNewOfficer: values.isNewOfficer,
         ...(officerPartyIdRef.current != null ? { officerId: officerPartyIdRef.current } : {}),
         buttonStatus,
       };
@@ -242,11 +254,20 @@ const useForm1205Form = ({ form1Id, prefill }) => {
 
   const onSubmit = useCallback(
     async (values) => {
+      const missing = findMissingRequiredFields(values, locked);
+      if (Object.keys(missing).length > 0) {
+        Object.entries(missing).forEach(([field, message]) =>
+          formMethods.setError(field, { type: 'required', message }),
+        );
+        return;
+      }
+
       setSaving(true);
       try {
         await saveForm1205(values, 'submit');
         await updateDdsToDps(form1Id);
         showSuccessSnackbar('Form 1205 submitted successfully!');
+        await onSubmitted?.();
       } catch (error) {
         showErrorSnackbar(
           error.response?.data?.error || 'Something went wrong! Please try again later.',
@@ -255,7 +276,7 @@ const useForm1205Form = ({ form1Id, prefill }) => {
         setSaving(false);
       }
     },
-    [form1Id, saveForm1205],
+    [form1Id, locked, saveForm1205, formMethods, onSubmitted],
   );
 
   const handleSave = formMethods.handleSubmit(onSave);

@@ -6,6 +6,7 @@ import {
   CITY_VALIDATION_REQUIRED,
   INTERNATIONAL_ADDRESS_VALIDATION_REQUIRED,
   STATE_VALIDATION_REQUIRED,
+  ZIP_CODE_VALIDATION,
   ZIP_CODE_VALIDATION_REQUIRED,
 } from '../../../../utilities/validationPatterns';
 import { formatZipCode } from '../../../../utilities/phoneAndFaxFormatter';
@@ -123,6 +124,7 @@ export const AddressFields = ({
           <FormTextField
             name="altZipCode"
             label="Second Zip Code"
+            rules={ZIP_CODE_VALIDATION}
             formatter={formatZipCode}
             placeholder="XXXXX or XXXXX-XXXX"
             inputProps={{ maxLength: 10 }}

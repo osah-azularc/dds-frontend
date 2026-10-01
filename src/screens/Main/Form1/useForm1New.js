@@ -29,6 +29,17 @@ import {
 const toDateString = (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '');
 const toDayjsOrNull = (value) => (value ? dayjs(value) : null);
 
+// Inline validation for the Temporary Permit section's own fields -- shared by
+// handleUpdatePermit (existing-docket review) and handleSave (create flow), both of which
+// used to report these same three checks via a warning snackbar instead.
+const validatePermitFields = (form) => {
+  const errors = {};
+  if (!form.permitEffectiveDate) errors.permitEffectiveDate = 'Please select Permit Effective Date.';
+  if (!form.dob) errors.dob = 'Please select Date of Birth.';
+  if (!form.incidentDate) errors.incidentDate = 'Please select Incident Date.';
+  return errors;
+};
+
 /**
  * Drives the "Enter New Form 1" screen (create flow) -- also reused, read-only, for both
  * existing-docket review entry points (appRoutes.jsx):
@@ -56,6 +67,7 @@ const useForm1New = () => {
   const [form, setForm] = useState(INITIAL_FORM1_FORM);
   const [saving, setSaving] = useState(false);
   const [updatingPermit, setUpdatingPermit] = useState(false);
+  const [permitErrors, setPermitErrors] = useState({});
 
   const clerkData = useClerkDocketData(form1Id);
   const superuserData = useSuperuserDocketData(caseId, isSuperuserView);
@@ -127,6 +139,7 @@ const useForm1New = () => {
 
   const handleFieldChange = useCallback((updates) => {
     setForm((prev) => ({ ...prev, ...updates }));
+    setPermitErrors({});
   }, []);
 
   const handleEligiblePermitChange = useCallback((value) => {
@@ -137,6 +150,7 @@ const useForm1New = () => {
         ? { permitEffectiveDate: null, permitExpiryDate: null, dob: null, incidentDate: null }
         : {}),
     }));
+    setPermitErrors({});
   }, []);
 
   const handleEffectiveDateChange = useCallback((value) => {
@@ -145,6 +159,7 @@ const useForm1New = () => {
       permitEffectiveDate: value,
       permitExpiryDate: value ? dayjs(value).add(PERMIT_EXPIRY_DAYS, 'day') : null,
     }));
+    setPermitErrors({});
   }, []);
 
   // Saves the Temporary Permit section on the existing-docket review
@@ -154,19 +169,13 @@ const useForm1New = () => {
   // false for the superuser view (Form1.jsx), which has no update endpoint for this at all.
   const handleUpdatePermit = useCallback(async () => {
     if (form.eligiblePermit === '1') {
-      if (!form.permitEffectiveDate) {
-        showWarningSnackbar('Please Select Permit Effective Date.');
-        return;
-      }
-      if (!form.dob) {
-        showWarningSnackbar('Please Select Date of Birth.');
-        return;
-      }
-      if (!form.incidentDate) {
-        showWarningSnackbar('Please Select Incident Date.');
+      const errors = validatePermitFields(form);
+      if (Object.keys(errors).length > 0) {
+        setPermitErrors(errors);
         return;
       }
     }
+    setPermitErrors({});
 
     setUpdatingPermit(true);
     try {
@@ -207,19 +216,13 @@ const useForm1New = () => {
       return;
     }
     if (form.eligiblePermit === '1') {
-      if (!form.permitEffectiveDate) {
-        showWarningSnackbar('Please Select Permit Effective Date.');
-        return;
-      }
-      if (!form.dob) {
-        showWarningSnackbar('Please Select Date of Birth.');
-        return;
-      }
-      if (!form.incidentDate) {
-        showWarningSnackbar('Please Select Incident Date.');
+      const errors = validatePermitFields(form);
+      if (Object.keys(errors).length > 0) {
+        setPermitErrors(errors);
         return;
       }
     }
+    setPermitErrors({});
 
     setSaving(true);
     try {
@@ -269,6 +272,7 @@ const useForm1New = () => {
     loadingExisting,
     updatingPermit,
     handleUpdatePermit,
+    permitErrors,
     refetchAfterPartyChange: clerkData.refetchAfterPartyChange,
   };
 };

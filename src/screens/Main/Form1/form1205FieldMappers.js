@@ -70,6 +70,9 @@ export const mapSearchResultToFormValues = (data) => {
     inches: height.inches,
     weight: data.weight,
     driverRequest: data.driverRequest,
+    // Stored as a TINYINT (form1_dds_1205_offence.is_new_officer) -- back to the radio's own
+    // '0'/'1' string shape here.
+    isNewOfficer: data.isNewOfficer != null ? String(data.isNewOfficer) : undefined,
   };
 
   return Object.fromEntries(Object.entries(values).filter(([, value]) => value));

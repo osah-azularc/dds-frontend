@@ -10,16 +10,15 @@ import {
   Typography,
 } from '@mui/material';
 import { DRIVER_REQUEST_OPTIONS } from '../form1205Constants';
-import { DRIVER_REQUEST_VALIDATION_REQUIRED } from '../form1205ValidationRules';
 
 /**
  * "Driver was requested to submit to test and:*" radio group -- matches
  * legacy form1-1205form.phtml's four options exactly, laid out as a
  * vertical list (not a row) to match its own driver-requested-block markup.
  * A dedicated Controller (not the shared FormRadioField, which is Yes/No
- * only) since this has four options. `rules` is dropped to `undefined`
- * while `disabled`, same as every other field on this screen (see
- * IncidentInformationSection.jsx).
+ * only) since this has four options. No `rules` prop -- required-ness is
+ * checked manually, Submit-only (see useForm1205Form.js's handleSubmitForm
+ * and form1205ValidationRules.js's own docblock for why).
  */
 const DriverRequestSection = ({ disabled }) => {
   const {
@@ -40,7 +39,6 @@ const DriverRequestSection = ({ disabled }) => {
       <Controller
         name="driverRequest"
         control={control}
-        rules={disabled ? undefined : DRIVER_REQUEST_VALIDATION_REQUIRED}
         render={({ field }) => (
           <FormControl error={!!errors.driverRequest} disabled={disabled}>
             <RadioGroup

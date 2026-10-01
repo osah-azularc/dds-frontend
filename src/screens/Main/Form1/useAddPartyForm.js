@@ -8,11 +8,16 @@ import {
   getForm1PartyAutofillDetails,
 } from '../../../services/form1PartyService';
 import { showErrorSnackbar, showSuccessSnackbar } from '../../../utilities/ErrorSnackBar';
+import { formatPhoneOrFaxNumber, formatZipCode } from '../../../utilities/phoneAndFaxFormatter';
 import { ADD_PARTY_DEFAULT_VALUES, ALT_ADDRESS_FIELDS, DEFAULT_STATE } from './addPartyConstants';
 
 // Maps a Form1Parties row (as returned by getForm1Parties) onto the form's field shape for
 // Edit mode. licenseNumberDefault always wins for `licenseNumber` since it's not a party
-// column at all -- see AddPartyModal.jsx's docblock.
+// column at all -- see AddPartyModal.jsx's docblock. Phone/Fax/Zip/Second Zip run back through
+// the same formatters the fields apply on every keystroke -- a saved value that predates this
+// formatting (legacy data, or a value set via handleSelectSuggestion below) would otherwise
+// show up here raw (e.g. "4045551234" instead of "(404) 555-1234"), and immediately fail the
+// field's own format rule (PHONE_VALIDATION/FAX_VALIDATION/ZIP_CODE_VALIDATION) on the next Save.
 const buildEditFormValues = (party, licenseNumberDefault) => ({
   contactType: party.typeOfContact || 'Petitioner',
   lastName: party.lastName || '',
@@ -28,15 +33,15 @@ const buildEditFormValues = (party, licenseNumberDefault) => ({
   address2: party.address2 || '',
   city: party.city || '',
   state: party.state || DEFAULT_STATE,
-  zip: party.zip || '',
-  phone: party.phone || '',
+  zip: formatZipCode(party.zip),
+  phone: formatPhoneOrFaxNumber(party.phone),
   email: party.email || '',
-  fax: party.fax || '',
+  fax: formatPhoneOrFaxNumber(party.fax),
   altAddress1: party.altAddress1 || '',
   altAddress2: party.altAddress2 || '',
   altCity: party.altCity || '',
   altState: party.altState || DEFAULT_STATE,
-  altZipCode: party.altZipCode || '',
+  altZipCode: formatZipCode(party.altZipCode),
 });
 
 /**
@@ -86,16 +91,17 @@ const useAddPartyForm = ({
   const isAttorney = contactType === 'Petitioner Attorney';
   const isInternational = isInternationalAddr === '1';
 
-  // Reset each time the modal opens -- blank (seeding License Number from the docket's
-  // current Agency Reference Number, see AddPartyModal.jsx's docblock) for Add, or
-  // populated from the party being edited for Edit.
+  // Reset each time the modal opens -- fully blank for Add (including License Number, which
+  // used to be seeded from the docket's own Agency Reference Number; dropped since a party's
+  // License Number doesn't actually have to match it), or populated from the party being
+  // edited for Edit.
   useEffect(() => {
     if (!open) return;
     if (isEditMode && editData) {
       reset(buildEditFormValues(editData, licenseNumberDefault));
       setShowAltAddress(Boolean(editData.altAddress1 || editData.altAddress2 || editData.altCity));
     } else {
-      reset({ ...ADD_PARTY_DEFAULT_VALUES, licenseNumber: licenseNumberDefault || '' });
+      reset(ADD_PARTY_DEFAULT_VALUES);
       setShowAltAddress(false);
     }
     setNameSuggestions([]);
@@ -163,14 +169,17 @@ const useAddPartyForm = ({
         address2: details.address2 || '',
         city: details.city || '',
         state: details.state || DEFAULT_STATE,
-        zip: details.zip || '',
-        phone: details.phone || '',
+        zip: formatZipCode(details.zip),
+        phone: formatPhoneOrFaxNumber(details.phone),
         email: details.email || '',
-        fax: details.fax || '',
+        fax: formatPhoneOrFaxNumber(details.fax),
       };
       // shouldValidate/shouldDirty: without them a field left showing a "required"
       // error from an earlier failed Save keeps showing that stale error even
-      // after autopopulate just filled it in.
+      // after autopopulate just filled it in. Phone/Fax/Zip run through the same
+      // formatters the fields apply while typing -- the attorney-lookup source data isn't
+      // guaranteed to already be in "(XXX) XXX-XXXX"/"XXXXX-XXXX" shape, and shouldValidate
+      // would otherwise immediately flag a freshly-autofilled, unformatted value as invalid.
       Object.entries(values).forEach(([field, value]) =>
         setValue(field, value, { shouldValidate: true, shouldDirty: true }),
       );

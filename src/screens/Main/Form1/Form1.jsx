@@ -51,6 +51,7 @@ const Form1 = () => {
     loadingExisting,
     updatingPermit,
     handleUpdatePermit,
+    permitErrors,
     refetchAfterPartyChange,
   } = useForm1New();
 
@@ -121,6 +122,7 @@ const Form1 = () => {
               readOnly={isExisting}
               updatingPermit={updatingPermit}
               onUpdatePermit={handleUpdatePermit}
+              permitErrors={permitErrors}
               // Temporary Permit eligibility is a Form1-specific workflow with no `docket`-
               // table source (see useForm1New.js) -- not applicable at all for
               // dds_superuser's docket-detail view, so the whole section (and its save
@@ -128,6 +130,7 @@ const Form1 = () => {
               // suppressed there.
               showPermitSave={isSuperuserView ? false : undefined}
               showTemporaryPermit={!isSuperuserView}
+              isSuperuserView={isSuperuserView}
             />
           </Grid>
           <Grid item xs={12} md={8}>

@@ -163,38 +163,44 @@ const DocumentPartyPanel = ({
           </Typography>
         </Grid>
         {!locked && canCreateParty && (
-          <Grid item xs={12} sm={6} md={3}>
-            <Button
-              color="primary"
-              startIcon={<AddIcon />}
-              fullWidth
-              disabled={!form1Id}
-              onClick={() => setAddPartyOpen(true)}
-            >
-              Add Party
-            </Button>
+          <Grid item xs={12}>
+            <Grid container>
+              <Grid item xs={12} sm={6} md={3}>
+                <Button
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  fullWidth
+                  disabled={!form1Id}
+                  onClick={() => setAddPartyOpen(true)}
+                >
+                  Add Party
+                </Button>
+              </Grid>
+            </Grid>
           </Grid>
         )}
-        {parties.length === 0 ? (
-          <Grid item xs={12}>
+        <Grid item xs={12}>
+          {parties.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No records found.
             </Typography>
-          </Grid>
-        ) : (
-          parties.map((party) => (
-            <Grid item xs={12} sm={6} key={party.partyId}>
-              <PartyInfoCard
-                party={party}
-                onEdit={setEditingParty}
-                onDelete={setPartyToDelete}
-                locked={locked}
-                canDelete={canDeleteParty}
-                viewOnly={viewOnly}
-              />
+          ) : (
+            <Grid container spacing={3}>
+              {parties.map((party) => (
+                <Grid item xs={12} sm={6} key={party.partyId}>
+                  <PartyInfoCard
+                    party={party}
+                    onEdit={setEditingParty}
+                    onDelete={setPartyToDelete}
+                    locked={locked}
+                    canDelete={canDeleteParty}
+                    viewOnly={viewOnly}
+                  />
+                </Grid>
+              ))}
             </Grid>
-          ))
-        )}
+          )}
+        </Grid>
       </Grid>
 
       {(form1Id || (viewOnly && isEditMode)) && (

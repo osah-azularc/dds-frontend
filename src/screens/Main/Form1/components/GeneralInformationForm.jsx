@@ -80,13 +80,15 @@ const GeneralInformationForm = ({
   onUpdatePermit,
   showPermitSave,
   showTemporaryPermit,
+  isSuperuserView,
+  permitErrors,
 }) => {
   const effectiveShowPermitSave = showPermitSave ?? readOnly;
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h2" color="secondary" sx={{ mb: 2 }}>
-        Form1 Information
+        {isSuperuserView ? 'Docket Information' : 'Form1 Information'}
       </Typography>
 
       <Grid container spacing={3}>
@@ -188,7 +190,7 @@ const GeneralInformationForm = ({
             sx={FIELD_SX}
           />
         </Grid>
-        {readOnly && (
+        {readOnly && !isSuperuserView && (
           <Grid item xs={12} sm={6}>
             <Form1DatePicker label="Date Entered" value={form.dateEntered} disabled />
           </Grid>
@@ -205,6 +207,7 @@ const GeneralInformationForm = ({
           showSaveButton={effectiveShowPermitSave}
           saving={updatingPermit}
           onSave={onUpdatePermit}
+          errors={permitErrors}
         />
       )}
 
@@ -269,6 +272,17 @@ GeneralInformationForm.propTypes = {
   // eligibility data -- see useForm1New.js), so Form1.jsx passes false there instead of
   // showing an always-blank, always-"No" section.
   showTemporaryPermit: PropTypes.bool,
+  // dds_superuser's docket-detail view (Form1.jsx) -- swaps the panel heading to "Docket
+  // Information" (there's no Form1 record behind a raw `docket` row) and hides Date
+  // Entered, which isn't meaningful for that view.
+  isSuperuserView: PropTypes.bool,
+  // Inline validation errors for the Temporary Permit section's own fields (keyed by
+  // permitEffectiveDate/dob/incidentDate) -- see useForm1New.js's validatePermitFields.
+  permitErrors: PropTypes.shape({
+    permitEffectiveDate: PropTypes.string,
+    dob: PropTypes.string,
+    incidentDate: PropTypes.string,
+  }),
 };
 
 GeneralInformationForm.defaultProps = {
@@ -277,6 +291,8 @@ GeneralInformationForm.defaultProps = {
   onUpdatePermit: undefined,
   showPermitSave: undefined,
   showTemporaryPermit: true,
+  isSuperuserView: false,
+  permitErrors: {},
 };
 
 export default React.memo(GeneralInformationForm);

@@ -90,15 +90,16 @@ const formatCounties = (data = []) =>
 
 // display_name is the label shown to the user; statusList (the raw `status`
 // column) is the value sent back on search, matching dds-header.phtml's
-// `value="{{st.statuslist}}"` / `{{st.display_name}}` binding.
+// `value="{{st.statuslist}}"` / `{{st.display_name}}` binding. Kept in the
+// API's own id order (Draft/In Review/Approved) rather than alphabetized --
+// that's the order the dropdown should read in, and alphabetizing scrambles
+// it ("All" is prepended separately by SingleSelectFilter's includeAllOption).
 const formatDdsStatuses = (data = []) =>
-  sortByLabel(
-    data.map((item) => ({
-      label: item.display_name,
-      value: item.statusList,
-      id: item.id,
-    })),
-  );
+  data.map((item) => ({
+    label: item.display_name,
+    value: item.statusList,
+    id: item.id,
+  }));
 
 const formatContactTypes = (data = []) =>
   sortByLabel(

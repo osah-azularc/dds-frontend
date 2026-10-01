@@ -98,7 +98,9 @@ const AddPartyModal = ({
       </DialogTitle>
       <DialogContent>
         <FormProvider {...formMethods}>
-          <Grid container spacing={3}>
+          {/* mt: Grid's own negative top margin (from spacing) otherwise leaves no room
+              above Contact Type's shrunk floating label, clipping it against DialogTitle. */}
+          <Grid container spacing={3} sx={{ mt: 0.5 }}>
             <Grid item xs={12}>
               <FormSelectField
                 name="contactType"

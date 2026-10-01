@@ -7,7 +7,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DeleteDialogue from '../../../../components/common/DeleteDialogue';
 import { deleteDdsDocket } from '../../../../services/form1Service';
@@ -203,12 +203,12 @@ const DocketTabBar = ({
       </Tabs>
       {activeTab === 'general' && actualStatus === 'pending' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#fff' }}>
-            <WarningAmberIcon fontSize="small" />
-            <Typography variant="body2">
-              This case will not be received by OSAH until
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningAmberOutlinedIcon sx={{ color: '#fff', mt: '2px' }} fontSize="small" />
+            <Typography variant="body2" sx={{ color: '#fff' }}>
+              This case will not be received by OSAH
               <br />
-              the 91 day or 1205 has been submitted
+              until the 91 day or 1205 has been submitted
             </Typography>
           </Box>
           <Button

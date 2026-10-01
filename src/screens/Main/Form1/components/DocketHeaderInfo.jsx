@@ -14,8 +14,8 @@ const partyDisplayName = (party) =>
  * /docket/reqdt/:caseId for dds_superuser -- see Form1.jsx/useForm1New.js). Matches
  * ecourt-frontend's DocketInformationMain.jsx layout/typography exactly (caption labels,
  * h2/secondary values) — no Download Docket button, since DDS doesn't have that feature.
- * "Created By" needs a resolved username the current API doesn't return, so it stays a
- * placeholder for now.
+ * "Created By" shows `existingDocket.docketClerk` (Docket/Form1Docket model's `docketclerk`
+ * column) -- the clerk username recorded when the docket was created.
  *
  * `existingDocket.docketNumber` arrives already display-formatted -- useClerkDocketData.js
  * applies constants.js's formatDocketNumber (legacy's storage-order reorder) once when
@@ -68,7 +68,7 @@ const DocketHeaderInfo = ({ existingDocket, parties }) => {
         </Grid>
         <Grid item xs={12} sm={3}>
           <Typography variant="h2" color="secondary" align="center">
-            Created By: —
+            Created By: {renderValue(existingDocket.docketClerk)}
           </Typography>
         </Grid>
       </Grid>
@@ -80,6 +80,7 @@ DocketHeaderInfo.propTypes = {
   existingDocket: PropTypes.shape({
     docketNumber: PropTypes.string,
     refAgency: PropTypes.string,
+    docketClerk: PropTypes.string,
   }).isRequired,
   parties: PropTypes.arrayOf(
     PropTypes.shape({

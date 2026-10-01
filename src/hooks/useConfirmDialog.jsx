@@ -15,6 +15,9 @@ import {
  * (osah.repos/module/Osahform/view/osahform/dds/superuser.phtml).
  * Ported from ecourt-frontend's useConfirmDialog.jsx, restyled with inline
  * sx (DDS has no DialogTitleBox/DialogHeading global CSS classes).
+ * `showConfirmDialog`'s optional 4th arg overrides the confirm button's label (default "OK") --
+ * e.g. Form1205Form.jsx's own Submit confirmation, which matches legacy's "Warning" popup
+ * (form1-1205form.phtml) exactly, including its yellow "Submit" button.
  */
 export function useConfirmDialog() {
   const [dialogState, setDialogState] = useState({
@@ -22,16 +25,17 @@ export function useConfirmDialog() {
     title: '',
     message: '',
     onConfirm: null,
+    confirmLabel: 'OK',
   });
 
-  const showConfirmDialog = useCallback((title, message, onConfirm) => {
-    setDialogState({ open: true, title, message, onConfirm });
+  const showConfirmDialog = useCallback((title, message, onConfirm, confirmLabel = 'OK') => {
+    setDialogState({ open: true, title, message, onConfirm, confirmLabel });
   }, []);
 
   const handleClose = useCallback((confirmed) => {
     setDialogState((prev) => {
       if (confirmed && prev.onConfirm) prev.onConfirm();
-      return { open: false, title: '', message: '', onConfirm: null };
+      return { open: false, title: '', message: '', onConfirm: null, confirmLabel: 'OK' };
     });
   }, []);
 
@@ -59,7 +63,7 @@ export function useConfirmDialog() {
               '&:hover': { backgroundColor: '#C49500' },
             }}
           >
-            OK
+            {dialogState.confirmLabel}
           </Button>
         </DialogActions>
       </Dialog>

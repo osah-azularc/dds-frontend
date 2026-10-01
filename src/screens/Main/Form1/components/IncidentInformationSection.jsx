@@ -12,12 +12,6 @@ import {
   FormTimeField,
 } from '../../../../components/common/reactHookFormDateTimeFields';
 import { FEET_OPTIONS, GENDER_OPTIONS, INCHES_OPTIONS } from '../form1205Constants';
-import {
-  CITATION_VALIDATION_REQUIRED,
-  COUNTY_OCCUR_VALIDATION_REQUIRED,
-  DOB_VALIDATION_REQUIRED,
-  INCIDENT_DATE_VALIDATION_REQUIRED,
-} from '../form1205ValidationRules';
 
 /**
  * "Incident Information" section of the Form 1205 screen -- maps onto
@@ -25,12 +19,17 @@ import {
  * form1-1205form.phtml exactly (Citation #/County of Occurrence/Incident
  * Date/Incident Time/Officer Badge Number, then Commercial Vehicle?/
  * Hazardous Materials?, then State of Issue/License Class/Date of
- * Birth/Restrictions/Gender/Height/Weight). Required fields/messages match
- * form1205ValidationRules.js exactly, dropped to `undefined` while
- * `disabled` (the whole docket is locked for editing once it's past Draft
- * -- see Form1205Form.jsx) so a locked field never blocks Save/Submit,
- * matching the same disabled-vs-rules split OfficerInformationSection.jsx
- * uses.
+ * Birth/Restrictions/Gender/Height/Weight). Citation/County of Occurrence/
+ * Incident Date/Date of Birth are required, but -- unlike legacy's own
+ * update1205(), which enforces that identically for both Save For Later and
+ * Submit -- that check now only runs manually on Submit (see
+ * useForm1205Form.js's handleSubmitForm and form1205ValidationRules.js's own
+ * docblock for why), so no `rules` prop carries it here at all; none of
+ * these four have a separate format rule worth keeping active on Save For
+ * Later (the date fields are already format-constrained by the picker
+ * itself). `disabled` (the whole docket is locked for editing once it's
+ * past Draft -- see Form1205Form.jsx) still gates every field's own
+ * editability, same as OfficerInformationSection.jsx.
  */
 const IncidentInformationSection = ({
   countyList,
@@ -48,7 +47,6 @@ const IncidentInformationSection = ({
         <FormTextField
           name="citation"
           label="Citation # *"
-          rules={disabled ? undefined : CITATION_VALIDATION_REQUIRED}
           disabled={disabled}
           inputProps={{ maxLength: 10 }}
         />
@@ -58,19 +56,12 @@ const IncidentInformationSection = ({
           name="countyOccur"
           label="County of Occurrence *"
           options={countyList}
-          rules={disabled ? undefined : COUNTY_OCCUR_VALIDATION_REQUIRED}
           loading={countyListLoading}
           disabled={disabled}
         />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <FormDateField
-          name="incidentDate"
-          label="Incident Date *"
-          rules={disabled ? undefined : INCIDENT_DATE_VALIDATION_REQUIRED}
-          maxDate={today()}
-          disabled={disabled}
-        />
+        <FormDateField name="incidentDate" label="Incident Date *" disabled={disabled} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
         <FormTimeField name="incidentTime" label="Incident Time" disabled={disabled} />
@@ -98,13 +89,7 @@ const IncidentInformationSection = ({
         <FormTextField name="licenseClass" label="License Class" disabled={disabled} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <FormDateField
-          name="dob"
-          label="Date of Birth *"
-          rules={disabled ? undefined : DOB_VALIDATION_REQUIRED}
-          maxDate={today()}
-          disabled={disabled}
-        />
+        <FormDateField name="dob" label="Date of Birth *" maxDate={today()} disabled={disabled} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
         <FormTextField name="restrictions" label="Restrictions" disabled={disabled} />

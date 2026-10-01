@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Box, Button, Grid, Menu, MenuItem, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { DataGridPro } from '@mui/x-data-grid-pro';
@@ -38,6 +39,10 @@ const ROW_HEIGHT = 44;
 const TABLE_MIN_HEIGHT = COLUMN_HEADER_HEIGHT + 100;
 const PAGE_SIZE_OPTIONS = [50, 100, 150, 200, 250, 300];
 
+// dds_clerk's trimmed-down column set drops Date Requested/County from the full grid --
+// see getSearchResultsColumns for the complete list.
+const CLERK_HIDDEN_COLUMN_FIELDS = new Set(['dateRequested', 'county']);
+
 /**
  * Docket Search results grid. Ported from ecourt-frontend's
  * Home/components/SearchResultsPageUI.jsx, trimmed down to what DDS's
@@ -68,10 +73,17 @@ export function SearchResultsPageUI({
   ConfirmDialog,
 }) {
   const theme = useTheme();
-  const columns = useMemo(
-    () => getSearchResultsColumns(theme, handleRowClick),
-    [theme, handleRowClick],
-  );
+  const userType = useSelector((state) => state.user.user_type);
+  // dds_clerk gets a trimmed-down results grid -- no Download Files/Export (those mirror
+  // legacy's superuser-only search screen, superuser.phtml) and no row-selection checkboxes,
+  // since there's nothing left for them to select rows for once those actions are gone.
+  const isDdsClerk = userType === 'dds_clerk';
+  const columns = useMemo(() => {
+    const allColumns = getSearchResultsColumns(theme, handleRowClick);
+    return isDdsClerk
+      ? allColumns.filter((column) => !CLERK_HIDDEN_COLUMN_FIELDS.has(column.field))
+      : allColumns;
+  }, [theme, handleRowClick, isDdsClerk]);
   const hasSelectedRows = selectedRows.length > 0;
 
   // Click anywhere in a row (not just the Docket link) to open it -- matches legacy's
@@ -100,36 +112,38 @@ export function SearchResultsPageUI({
               <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
                 Total Records: <strong>{totalRecords}</strong>
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button
-                  variant="contained"
-                  endIcon={<KeyboardArrowDownIcon />}
-                  onClick={handleDownloadClick}
-                  sx={ACTION_BUTTON_SX}
-                >
-                  Download Files
-                </Button>
-                <Menu
-                  anchorEl={downloadAnchor}
-                  open={Boolean(downloadAnchor)}
-                  onClose={handleDownloadClose}
-                >
-                  <MenuItem onClick={handleDownloadCaseFiles} disabled={!hasSelectedRows}>
-                    Download Case Files
-                  </MenuItem>
-                  <MenuItem onClick={handleDownloadDecisions} disabled={!hasSelectedRows}>
-                    Download Decisions
-                  </MenuItem>
-                </Menu>
-                <Button
-                  variant="contained"
-                  startIcon={<GetAppIcon />}
-                  onClick={handleExport}
-                  sx={ACTION_BUTTON_SX}
-                >
-                  Export
-                </Button>
-              </Box>
+              {!isDdsClerk && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    endIcon={<KeyboardArrowDownIcon />}
+                    onClick={handleDownloadClick}
+                    sx={ACTION_BUTTON_SX}
+                  >
+                    Download Files
+                  </Button>
+                  <Menu
+                    anchorEl={downloadAnchor}
+                    open={Boolean(downloadAnchor)}
+                    onClose={handleDownloadClose}
+                  >
+                    <MenuItem onClick={handleDownloadCaseFiles} disabled={!hasSelectedRows}>
+                      Download Case Files
+                    </MenuItem>
+                    <MenuItem onClick={handleDownloadDecisions} disabled={!hasSelectedRows}>
+                      Download Decisions
+                    </MenuItem>
+                  </Menu>
+                  <Button
+                    variant="contained"
+                    startIcon={<GetAppIcon />}
+                    onClick={handleExport}
+                    sx={ACTION_BUTTON_SX}
+                  >
+                    Export
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Grid>
           <Grid item xs={12} pt={2}>
@@ -146,7 +160,7 @@ export function SearchResultsPageUI({
                   noRowsOverlay: { isInitialLoad },
                   loadingOverlay: { columns },
                 }}
-                checkboxSelection
+                checkboxSelection={!isDdsClerk}
                 rowSelectionModel={selectedRows}
                 onRowSelectionModelChange={setSelectedRows}
                 onCellClick={handleCellClick}
